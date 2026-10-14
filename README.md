@@ -1,3 +1,4 @@
+<!-- TODO: Replace the Rails boilerplate below with real setup docs for okanjo. -->
 # README
 
 This README would normally document whatever steps are necessary to get the
