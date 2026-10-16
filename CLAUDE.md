@@ -18,12 +18,12 @@ This repo is also a record of how it was built: Luis owns the architecture and d
 
 ## Roadmap
 1. **Core:** groups, members, expenses, settlement, built-in auth, one Solid Queue job. CI, deployed with Kamal.
-2. **Showcase (after core ships):** a JSON API consumed by a small LIFF front end, with LINE login bridged to Rails auth. The same domain serves the Hotwire web UI and LINE.
+2. **Showcase (after core ships, needs an ADR first):** a JSON API consumed by a small LIFF front end, with LINE Login as a second auth strategy on the same `User` (the nullable `Member.user_id` seam). The core stays a Hotwire monolith that runs standalone, and the LINE pieces are optional.
 
 Keep phase 2 in mind when designing phase 1, and raise it whenever a phase 1 choice would make it harder.
 
 ## Rails 8 conventions
-- Use Rails 8 defaults unless an ADR says otherwise: Solid Queue/Cache/Cable (not Sidekiq/Redis), Propshaft (not Sprockets), the built-in authentication generator (not Devise), `params.expect` (not `require/permit`), Kamal 2 for deploys, Hotwire (Turbo + Stimulus) for UI, Minitest + fixtures.
+- Use Rails 8 defaults unless an ADR says otherwise: Solid Queue/Cache/Cable (not Sidekiq/Redis), Propshaft (not Sprockets), the built-in authentication generator (not Devise), `params.expect` (not `require/permit`), Kamal 2 for deploys, Hotwire (Turbo + Stimulus) for UI. Tests use Minitest + fixtures for now; RSpec vs Minitest is an open decision to settle in an ADR.
 - Follow convention over configuration and write idiomatic Ruby, not PHP- or JS-shaped Ruby. Adding a gem needs an ADR.
 - Money is integer yen. Never use floats for amounts.
 
