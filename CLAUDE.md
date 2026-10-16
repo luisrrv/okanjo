@@ -23,9 +23,9 @@ This repo is also a record of how it was built: Luis owns the architecture and d
 Keep phase 2 in mind when designing phase 1, and raise it whenever a phase 1 choice would make it harder.
 
 ## Rails 8 conventions
-- Use Rails 8 defaults unless an ADR says otherwise: Solid Queue/Cache/Cable (not Sidekiq/Redis), Propshaft (not Sprockets), the built-in authentication generator (not Devise), `params.expect` (not `require/permit`), Kamal 2 for deploys, Hotwire (Turbo + Stimulus) for UI. Tests use Minitest + fixtures for now; RSpec vs Minitest is an open decision to settle in an ADR.
+- Use Rails 8 defaults unless an ADR says otherwise: Solid Queue/Cache/Cable (not Sidekiq/Redis), Propshaft (not Sprockets), the built-in authentication generator (not Devise), `params.expect` (not `require/permit`), Kamal 2 for deploys, Hotwire (Turbo + Stimulus) for UI. Tests use RSpec + FactoryBot (ADR 0014); follow its readable-RSpec rule.
 - Follow convention over configuration and write idiomatic Ruby, not PHP- or JS-shaped Ruby. Adding a gem needs an ADR.
 - Money is integer yen. Never use floats for amounts.
 
 ## Verify
-- `bin/rails test` for the touched area, `bin/rubocop`, and `bin/brakeman` before calling a step done. Show the results.
+- `bundle exec rspec` for the touched area, `bin/rubocop`, and `bin/brakeman` before calling a step done. Show the results.
