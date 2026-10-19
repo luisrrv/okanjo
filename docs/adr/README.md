@@ -4,3 +4,4 @@
 - [0013. Settle through a single collector](0013-settle-through-a-collector.md): the member with the largest positive balance settles with everyone else; trust over fewest transfers
 - [0014. Test with RSpec and FactoryBot](0014-test-with-rspec-and-factorybot.md): RSpec + FactoryBot to match target Rails shops, with a readable-RSpec rule
 - [0015. The payer doesn't have to be in the split](0015-payer-need-not-be-in-the-split.md): allowed, with a confirmation when the payer is left out; group-integrity validations
+- [0016. Anonymous core with 30-day retention and receipts](0016-anonymous-core-with-30-day-retention.md): no login in the core; occasions deleted 30 days after the last change; printable receipt; auth generator moves to the start of phase 2

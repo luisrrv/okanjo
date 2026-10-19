@@ -17,8 +17,8 @@ This repo is also a record of how it was built: Luis owns the architecture and d
 5. **Update docs.** Keep `docs/ARCHITECTURE.md` current: system context, domain model, key flows, deployment. Use Mermaid diagrams.
 
 ## Roadmap
-1. **Core:** groups, members, expenses, settlement, built-in auth, one Solid Queue job. CI, deployed with Kamal.
-2. **Showcase (after core ships, needs an ADR first):** a JSON API consumed by a small LIFF front end, with LINE Login as a second auth strategy on the same `User` (the nullable `Member.user_id` seam). The core stays a Hotwire monolith that runs standalone, and the LINE pieces are optional.
+1. **Core:** groups, members, expenses, settlement, a printable receipt, one Solid Queue job (the 30-day purge). No login (ADR 0016). CI, deployed with Kamal.
+2. **Showcase (after core ships, needs an ADR first):** starts with the Rails 8 auth generator, then a JSON API consumed by a small LIFF front end, with LINE Login as a second auth strategy on the same `User` (via a nullable `Member.user_id`). The core stays a Hotwire monolith that runs standalone, and the LINE pieces are optional.
 
 Keep phase 2 in mind when designing phase 1, and raise it whenever a phase 1 choice would make it harder.
 
