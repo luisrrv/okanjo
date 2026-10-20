@@ -1,6 +1,6 @@
 # okanjo
 
-Shared-expense splitting app (groups, members, expenses, settlement that minimises transfers), built in Rails 8.
+Shared-expense splitting app (groups, members, expenses, settlement through a single collector), built in Rails 8. Users see it as warikan (割り勘) at warikan.lrod.dev; okanjo is the codebase name (ADR 0017).
 
 This repo is also a record of how it was built: Luis owns the architecture and design decisions, and Claude implements from them. The design trail in `docs/` matters as much as the code.
 
