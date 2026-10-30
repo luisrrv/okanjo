@@ -41,6 +41,31 @@ RSpec.describe Member, type: :model do
     end
   end
 
+  describe "deletion" do
+    it "is rejected for a member who paid for something, even outside the split" do
+      group = create(:group)
+      dai = create(:member, group: group)
+      create(:expense, group: group, payer: dai, members: [ create(:member, group: group) ])
+
+      expect(dai.destroy).to be(false)
+      expect(dai.errors[:base]).not_to be_empty
+    end
+
+    it "is rejected for a member in a split" do
+      expense = create(:expense)
+      guest = create(:member, group: expense.group)
+      expense.members << guest
+
+      expect(guest.destroy).to be(false)
+    end
+
+    it "is allowed for a member with no expenses" do
+      member = create(:member)
+
+      expect { member.destroy }.to change(Member, :count).by(-1)
+    end
+  end
+
   describe "touching the group" do
     it "moves the group's updated_at when a member is added" do
       group = create(:group, updated_at: 1.day.ago)

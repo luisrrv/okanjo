@@ -81,10 +81,11 @@ end
 - `touch: true` updates the parent's `updated_at` whenever a record is created, changed or
   deleted. A change to a participation touches its expense, which touches the group. The
   group's `updated_at` is therefore "last change", which drives retention (0016).
-- **Gap to check:** when `member_ids=` removes someone from the split, Rails *deletes* the
-  join row without running callbacks (that's how `has_many :through` works), so `touch`
-  doesn't fire. If the spec below confirms this, touch the expense explicitly when its split
-  changes.
+- **Split changes (resolved):** by default, when `member_ids=` removes someone from the
+  split, Rails *deletes* the join row without running callbacks, so `touch` doesn't fire.
+  The spec confirmed it. The fix is `dependent: :destroy` on
+  `has_many :members, through: :participations`, which makes removed join rows go through
+  `destroy`, so Participation's `touch` runs and the group's last change moves forward.
 
 ## Validations
 | Model | Rule | Source |
@@ -130,10 +131,17 @@ expense.odd_yen       # collected - amount; the お釣り the payer keeps
   because the person adding knows who's who and a suffix like "Yuki 2" carries no meaning.
   A `NOCASE` column collation backs this with a case-insensitive unique index. `NOCASE`
   only folds ASCII, which is enough because kana have no case.
-- **D5:** `amount <= 2_000_000_000` as a technical ceiling. Rails treats integer columns as
-  4 bytes by default (max 2,147,483,647), so a larger value would raise on save and show a
-  500 page. The ceiling turns that into a validation error. It isn't meant to catch typos;
-  showing the amount back formatted (¥200,000) does that.
+- **D5:** `amount <= 2_000_000_000`.
+  - **Why some limit is needed:** on SQLite, Rails uses an 8-byte integer type. A value
+    above 9,223,372,036,854,775,807 raises `ActiveModel::RangeError` on save, which shows a
+    500 page. The validation turns that into a normal error, and a spec checks both sides.
+  - **Why this limit:** ¥2B keeps amounts within a 4-byte integer, so the column stays safe
+    if the database ever becomes PostgreSQL or MySQL, where `integer` is 4 bytes.
+  - **Correction:** this was first written as "Rails treats integer columns as 4 bytes by
+    default". That's true for PostgreSQL and MySQL, but not SQLite. The spec run showed
+    2,147,483,648 saving fine.
+  - The limit isn't meant to catch typos; showing the amount back formatted (¥200,000)
+    does that.
 
 - **D3:** both mechanisms, the usual Rails combination.
   - **In the models:** `dependent: :destroy` (see Associations). This is the conventional,
@@ -165,13 +173,13 @@ expense.odd_yen       # collected - amount; the お釣り the payer keeps
 | Payer or a split member from another group | invalid (crafted request) |
 | Same member added to the split twice | invalid; the index also blocks it |
 | `amount` 0, negative or decimal (`1000.5`) | invalid |
-| `amount` 2,000,000,001 | a validation error, not a 500 from Rails' 4-byte integer limit |
+| `amount` 2,000,000,001, or 2⁶³ (past SQLite's 8-byte limit) | a validation error, not a 500 |
 | Member "yuki" when "Yuki" exists in the group | invalid: name already taken |
 | Changing the members in the split | shares change on the next read; nothing stored to rebuild |
 | Adding or editing an expense | group `updated_at` moves forward |
 | `group.destroy` on a group whose members paid for expenses | succeeds; members, expenses and participations are all gone |
 | `Group.where(id: group.id).delete_all` (the purge route) | the same, through the database cascade |
-| Removing someone from the split only (`member_ids=`) | group `updated_at` still moves forward (see Gap to check) |
+| Removing someone from the split only (`member_ids=`) | group `updated_at` still moves forward (see Split changes) |
 | Deleting a member who paid for an expense | rejected, with an error on the member |
 
 ## Verification

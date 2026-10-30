@@ -41,6 +41,22 @@ RSpec.describe Group, type: :model do
   end
 
   describe "deletion" do
+    it "destroys members whose expenses it also destroys" do
+      expense = create(:expense)
+
+      expense.group.destroy
+
+      expect([ Member.count, Expense.count, Participation.count ]).to eq([ 0, 0, 0 ])
+    end
+
+    it "deletes everything through the database cascade (the purge route)" do
+      expense = create(:expense)
+
+      Group.where(id: expense.group_id).delete_all
+
+      expect([ Member.count, Expense.count, Participation.count ]).to eq([ 0, 0, 0 ])
+    end
+
     it "destroys its members through Rails" do
       group = create(:group)
       create_list(:member, 2, group: group)
