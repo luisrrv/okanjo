@@ -44,17 +44,19 @@ RSpec.describe Group, type: :model do
     it "destroys members whose expenses it also destroys" do
       expense = create(:expense)
 
-      expense.group.destroy
-
-      expect([ Member.count, Expense.count, Participation.count ]).to eq([ 0, 0, 0 ])
+      expect { expense.group.destroy }
+        .to change(Member, :count).by(-1)
+        .and change(Expense, :count).by(-1)
+        .and change(Participation, :count).by(-1)
     end
 
     it "deletes everything through the database cascade (the purge route)" do
       expense = create(:expense)
 
-      Group.where(id: expense.group_id).delete_all
-
-      expect([ Member.count, Expense.count, Participation.count ]).to eq([ 0, 0, 0 ])
+      expect { Group.where(id: expense.group_id).delete_all }
+        .to change(Member, :count).by(-1)
+        .and change(Expense, :count).by(-1)
+        .and change(Participation, :count).by(-1)
     end
 
     it "destroys its members through Rails" do
