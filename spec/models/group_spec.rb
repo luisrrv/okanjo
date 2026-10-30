@@ -39,4 +39,20 @@ RSpec.describe Group, type: :model do
       expect(build(:group, name: "   ").name).to be_nil
     end
   end
+
+  describe "deletion" do
+    it "destroys its members through Rails" do
+      group = create(:group)
+      create_list(:member, 2, group: group)
+
+      expect { group.destroy }.to change(Member, :count).by(-2)
+    end
+
+    it "deletes its members through the database cascade (the purge route)" do
+      group = create(:group)
+      create_list(:member, 2, group: group)
+
+      expect { Group.where(id: group.id).delete_all }.to change(Member, :count).by(-2)
+    end
+  end
 end
