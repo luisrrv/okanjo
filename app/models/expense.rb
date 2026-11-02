@@ -33,10 +33,10 @@ class Expense < ApplicationRecord
 
   private
     def payer_belongs_to_group
-      errors.add(:payer, "must belong to this group") if payer && payer.group_id != group_id
+      errors.add(:payer, :not_in_group) if payer && payer.group_id != group_id
     end
 
     def members_belong_to_group
-      errors.add(:members, "must all belong to this group") if members.any? { |member| member.group_id != group_id }
+      errors.add(:members, :not_in_group) if members.any? { |member| member.group_id != group_id }
     end
 end

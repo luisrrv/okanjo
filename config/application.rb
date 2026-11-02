@@ -16,6 +16,11 @@ module Okanjo
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    # Japanese-only UI (ADR 0018). Times are stored in UTC and shown in Japan time.
+    config.i18n.default_locale = :ja
+    config.i18n.available_locales = [ :ja ]
+    config.time_zone = "Tokyo"
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

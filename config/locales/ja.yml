@@ -1,0 +1,33 @@
+ja:
+  app:
+    name: 割り勘
+
+  activerecord:
+    models:
+      group: イベント
+      member: メンバー
+      expense: 支払い
+      participation: 割り勘メンバー
+    attributes:
+      group:
+        name: イベント名
+        members: メンバー
+      group/members:
+        name: あなたの名前
+      member:
+        name: 名前
+      expense:
+        description: 内容
+        amount: 金額
+        payer: 支払った人
+        members: 割り勘するメンバー
+      participation:
+        member: メンバー
+    errors:
+      models:
+        expense:
+          attributes:
+            payer:
+              not_in_group: はこのイベントのメンバーではありません
+            members:
+              not_in_group: にこのイベント以外のメンバーが含まれています
