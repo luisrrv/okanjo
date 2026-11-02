@@ -17,3 +17,4 @@
 - [0016. Anonymous core with 30-day retention and receipts](0016-anonymous-core-with-30-day-retention.md): no login in the core; occasions deleted 30 days after the last change; printable receipt; auth generator moves to the start of phase 2
 - [0017. CI, and a Kamal deploy to warikan.lrod.dev](0017-ci-and-kamal-deploy-to-warikan-lrod-dev.md): Kamal to a Tokyo VPS; warikan is the product name, okanjo the codebase name
 - [0018. Japanese UI with Rails I18n and rails-i18n](0018-japanese-ui-with-rails-i18n.md): all copy in locale files; rails-i18n for Rails' own messages
+- [0019. Live refresh with Turbo page-refresh broadcasts](0019-live-refresh-with-turbo-broadcasts.md): Group broadcasts refreshes; other viewers' pages morph in place over Solid Cable
