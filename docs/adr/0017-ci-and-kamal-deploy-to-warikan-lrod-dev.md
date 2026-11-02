@@ -59,4 +59,26 @@ Option 1.
 - The README presents the old LIFF app as the predecessor and links to its repo.
 - Follow-up once this ships: a Netlify `_redirects` rule in the old repo sending
   warikan-jp.netlify.app to warikan.lrod.dev.
-- Open: the hosting provider, and paid versus free.
+- ~~Open: the hosting provider, and paid versus free.~~ Decided below.
+
+## Update (2026-11-02): hosting
+Luis wants the least cost for a portfolio project, as long as it stays workable. Prices
+checked on the providers' own pages: Sakura VPS 1 GB is 990円/month in Tokyo and 880円 in
+Ishikari; Lightsail 1 GB is $7/month. Running the purge job more often doesn't change the
+cost of a fixed-price VPS.
+
+**Decision: a server in Japan, free tier first.**
+- **First choice: Oracle Cloud Always Free, ARM, Tokyo or Osaka (0円).** Kamal builds for
+  `arm64`, which Luis's Apple Silicon Mac does natively, so deploys are fast. Known
+  friction: sign-up approval and regional capacity are unreliable, idle free servers can be
+  reclaimed (upgrading to pay-as-you-go while staying in the free limits is the usual fix;
+  to verify in Oracle's docs), and ports 80/443 must be opened in both the security list
+  and the server's own firewall.
+- **Fallback: Sakura VPS, Ishikari, 1 GB (880円/month).** The cheapest paid option with
+  enough memory; still in Japan. The image is then built for `amd64` on the Mac
+  (emulated, slower). Switching is a `config/deploy.yml` change plus one DNS record.
+- Not chosen: Sakura Tokyo 1 GB (990円, 110円 more for no visible difference), Sakura 512 MB
+  (698円, too little memory), Lightsail (about the same price, billed in USD), and PaaS free
+  tiers (their disks are wiped on deploy, which loses SQLite).
+- Buying the server and adding the Gandi DNS record are done by Luis; Claude prepares the
+  Kamal configuration and runs deploys with his OK.
