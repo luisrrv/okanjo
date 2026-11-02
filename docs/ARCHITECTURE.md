@@ -4,15 +4,15 @@ okanjo is a shared-expense splitting app for single occasions (a 飲み会, a tr
 it as **warikan (割り勘)** at `warikan.lrod.dev`; okanjo is the codebase name (ADR 0017).
 Decisions are recorded in [`docs/adr/`](adr/README.md), and this document summarises them.
 
-**Status (2026-11-02):** the domain model and the core flow (create an occasion, members,
-identity, expenses) are built and tested. Everything marked *planned* is designed but not
-implemented yet.
+**Status (2026-11-02):** the domain model, the core flow (create an occasion, members,
+identity, expenses), balances, settlement and live refresh are built and tested.
+Everything marked *planned* is designed but not implemented yet.
 
 | Area | Status |
 |---|---|
 | Domain model: groups, members, expenses, split shares | built |
 | Routes, controllers and forms (session 2) | built |
-| Balance sheet, settlement, Turbo Stream update (session 3) | planned |
+| Balance sheet, settlement, live refresh (session 3) | built |
 | Printable receipt, purge job, deploy (session 4) | planned |
 | Phase 2: auth generator, JSON API, LIFF client, LINE Login | planned, after the core ships |
 
@@ -32,7 +32,9 @@ flowchart LR
     jobs --> queue[(SQLite: queue)]
     jobs -- daily purge --> primary
     puma --> cache[(SQLite: cache)]
+    puma -- Action Cable --> cable[(SQLite: cable)]
   end
+  proxy -. WebSocket: live refresh .-> user
 
   dns[Gandi DNS<br/>warikan.lrod.dev A record] -.-> proxy
 ```
@@ -42,6 +44,8 @@ flowchart LR
   Docker volume (ADR 0002, 0017).
 - **Server-rendered HTML.** ERB views with Turbo and Stimulus. No JSON API in the core
   (ADR 0003).
+- **Live refresh.** Every change to an occasion broadcasts a Turbo page refresh over Action
+  Cable (Solid Cable in production), and other viewers' pages morph in place (ADR 0019).
 - **No login in the core.** An occasion's URL token is its only access control. A signed
   cookie remembers which member this browser is in each occasion (ADR 0005, 0006, 0016).
 
@@ -93,8 +97,12 @@ erDiagram
 | Logic | Lives in | Status |
 |---|---|---|
 | One expense's share, collected amount, odd yen | `Expense` model | built |
-| A group's balances (collected minus owed, per member) | plain Ruby query object, 2 queries | planned |
-| Who pays whom | plain Ruby settlement object, from the balances | planned |
+| A group's balances (credited minus owed, per member) | `BalanceSheet`, plain Ruby, 3 queries | built |
+| Who pays whom | `Settlement`, plain Ruby, from the balances | built |
+
+`BalanceSheet` and `Settlement` live in `app/models/` with no table: in Rails a model is a
+domain object, with or without a database table, and the folder is autoloaded. That's the
+Rails-core and 37signals habit, instead of inventing an `app/services/` convention.
 
 ## Key flows
 
@@ -122,13 +130,18 @@ sequenceDiagram
 - The cookie is a convenience, not security: it defaults the payer and marks "you". It
   also lists this browser's recent occasions on the start page (`CurrentMember`).
 
-### Add an expense and settle up *(step 1 built; 2–3 planned)*
+### Add an expense and settle up *(built)*
 
 1. Someone adds an expense: description (pre-filled お会計 N), amount, payer (defaults to
    this browser's member), and who's in the split (everyone by default). Leaving the payer
    out of the split asks for confirmation, stating the effect in yen (ADR 0015).
-2. The balance panel updates in place with a Turbo Stream.
-3. **Settlement goes through one collector:** the member with the largest positive
+2. **Everyone viewing the occasion sees it.** The expense touches the group, the group
+   broadcasts a Turbo refresh over Action Cable, and each viewer's page morphs in place.
+   A `keep-edits` Stimulus controller stops the morph from wiping a field someone is
+   typing in (ADR 0019).
+3. **The 精算 (settle up) section** shows each member's fronted and owed amounts and
+   balance (`BalanceSheet`, 3 queries whatever the size), then who pays whom.
+   **Settlement goes through one collector:** the member with the largest positive
    balance (ties go to whoever joined first). Every other member makes at most one
    transfer, to or from the collector. That's at most n−1 transfers, chosen because
    people trust "pay the 幹事", not because it's the fewest possible (ADR 0013).

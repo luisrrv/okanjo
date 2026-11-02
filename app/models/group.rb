@@ -3,6 +3,10 @@ class Group < ApplicationRecord
 
   has_secure_token
 
+  # Everyone viewing the occasion gets a page refresh on any change (ADR 0019).
+  # Members, expenses and split entries touch the group, so this covers them all.
+  broadcasts_refreshes
+
   # Children cascade in the database too (on_delete: :cascade), which is what the
   # purge job relies on when it uses delete_all.
   # Order matters: expenses must be destroyed before members, or a member who paid

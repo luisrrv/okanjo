@@ -44,8 +44,22 @@ to its group's stream, and the layout uses `turbo_refreshes_with method: :morph,
   anything depends on it.
 - The purge job's `delete_all` skips callbacks, so a purged occasion doesn't broadcast.
   Nobody is viewing a 30-day-old occasion, so that's fine.
-- Risk to check manually: a refresh that arrives while someone is typing in a form on the
-  occasion page (adding a member) could reset what they typed. If it does, mark that form
-  `data-turbo-permanent`.
+- **Typing during a refresh (checked 2026-11-02, decided by Luis).** A refresh reset the
+  add-member field someone was typing in, because the fresh page has an empty field. This
+  is most likely in the first minute of an occasion, when everyone opens the link and adds
+  themselves at once. Options weighed:
+  1. `data-turbo-permanent` on the form. Expected to also keep the old value after your
+     *own* submit, since that redirect is a same-page refresh too, so the field wouldn't
+     clear. Not tested.
+  2. **A small `keep-edits` Stimulus controller (chosen).** Edited fields are marked,
+     unmarked when their form is submitted, and skipped by the morph
+     (`turbo:before-morph-element`). Everything else on the page still updates, and your
+     own submit still clears the field. A system spec covers both cases, and fails without
+     the controller.
+  3. Accepting it, since the cost is retyping a name.
+- **Stale expense form (accepted).** The expense form page isn't subscribed, so a member
+  added while someone fills in an expense won't appear in that form's split until it's
+  reloaded. Subscribing it would reset the form mid-entry instead. Fixable afterwards by
+  editing the expense.
 - First on the cut list if time runs short (plan: the Turbo interaction goes before
   settlement).

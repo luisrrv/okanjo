@@ -1,6 +1,6 @@
 # Spec: balances, settlement and live refresh (session 3)
 
-- Status: Draft (for Luis's review)
+- Status: Implemented (2026-11-02)
 - ADRs: 0008, 0009, 0013, 0019
 - Depends on: [domain model](domain-model.md), [core flow](core-flow.md)
 
