@@ -73,6 +73,9 @@ RSpec.configure do |config|
   # Keeps rate_limit counts (stored in the cache) from leaking between examples.
   config.before { Rails.cache.clear }
 
+  # travel_to and friends, for specs about dates (e.g. the 30-day purge).
+  config.include ActiveSupport::Testing::TimeHelpers
+
   # Lets specs call create(:expense) instead of FactoryBot.create(:expense).
   config.include FactoryBot::Syntax::Methods
 

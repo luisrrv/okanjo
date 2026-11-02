@@ -14,6 +14,10 @@ class Group < ApplicationRecord
   has_many :expenses, dependent: :destroy
   has_many :members, dependent: :destroy
 
+  # Untouched for longer than RETENTION: what the daily purge deletes. Strictly older, so an
+  # occasion is never deleted before the date its page shows.
+  scope :stale, -> { where(updated_at: ...RETENTION.ago) }
+
   # Creating an occasion also creates its first member: whoever is creating it.
   accepts_nested_attributes_for :members
 

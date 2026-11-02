@@ -10,6 +10,10 @@
 #     schedule: at 5am every day
 
 production:
+  # Deletes occasions untouched for 30 days (ADR 0012, 0016). 4am JST is the quietest hour.
+  purge_stale_groups:
+    class: PurgeStaleGroupsJob
+    schedule: every day at 4am Asia/Tokyo
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
