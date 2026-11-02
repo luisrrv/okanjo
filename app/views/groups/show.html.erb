@@ -1,0 +1,12 @@
+<% content_for :title, group_title(@group) %>
+
+<h1 class="text-2xl font-bold"><%= group_title(@group) %></h1>
+<p class="mt-1 text-sm text-stone-500">
+  <%= t(".deletion_notice", date: l(@group.deletion_date, format: :long)) %>
+</p>
+
+<section class="mt-6 rounded-lg bg-white p-4 shadow-sm">
+  <%= label_tag :share_link, t(".share_link"), class: "block text-sm font-bold" %>
+  <%= text_field_tag :share_link, group_url(@group), readonly: true,
+        class: "mt-1 w-full rounded-md border border-stone-300 bg-stone-50 px-3 py-2 text-sm" %>
+</section>

@@ -1,0 +1,37 @@
+<h1 class="mb-6 text-2xl font-bold"><%= t(".title") %></h1>
+
+<%= form_with model: @group, class: "space-y-4 rounded-lg bg-white p-4 shadow-sm" do |form| %>
+  <%= render "shared/errors", model: @group %>
+
+  <div>
+    <%= form.label :name, t(".name_label"), class: "block text-sm font-bold" %>
+    <%= form.text_field :name, placeholder: t(".name_placeholder"), maxlength: 50,
+          class: "mt-1 w-full rounded-md border border-stone-300 px-3 py-2" %>
+  </div>
+
+  <%= form.fields_for :members do |member_form| %>
+    <div>
+      <%= member_form.label :name, t(".your_name_label"), class: "block text-sm font-bold" %>
+      <%= member_form.text_field :name, required: true, maxlength: 50,
+            class: "mt-1 w-full rounded-md border border-stone-300 px-3 py-2" %>
+    </div>
+  <% end %>
+
+  <%= form.submit t(".submit"), class: "w-full rounded-md bg-stone-900 px-4 py-3 font-bold text-white" %>
+<% end %>
+
+<% if @recent_groups.any? %>
+  <section class="mt-8">
+    <h2 class="mb-2 text-sm font-bold text-stone-500"><%= t(".recent") %></h2>
+    <ul class="divide-y divide-stone-200 rounded-lg bg-white shadow-sm">
+      <% @recent_groups.each do |group| %>
+        <li>
+          <%= link_to group, class: "flex justify-between px-4 py-3" do %>
+            <span><%= group_title(group) %></span>
+            <span class="text-sm text-stone-500"><%= t(".members_count", count: group.members.size) %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

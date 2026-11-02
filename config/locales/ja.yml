@@ -2,6 +2,11 @@ ja:
   app:
     name: 割り勘
 
+  date:
+    formats:
+      # rails-i18n's long format pads with zeros (2026年12月02日); this reads more naturally.
+      long: "%Y年%-m月%-d日(%a)"
+
   activerecord:
     models:
       group: イベント
@@ -31,3 +36,22 @@ ja:
               not_in_group: はこのイベントのメンバーではありません
             members:
               not_in_group: にこのイベント以外のメンバーが含まれています
+
+  shared:
+    errors:
+      heading: 入力内容を確認してください
+
+  groups:
+    new:
+      title: 割り勘をはじめる
+      name_label: イベント名（任意）
+      name_placeholder: 例：忘年会、箱根旅行
+      your_name_label: あなたの名前
+      submit: 作成する
+      recent: 最近開いたイベント
+      members_count: "%{count}人"
+    create:
+      created: イベントを作成しました
+    show:
+      deletion_notice: 変更がない場合、%{date}に削除されます
+      share_link: このリンクを共有してください

@@ -70,6 +70,9 @@ RSpec.configure do |config|
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
 
+  # Keeps rate_limit counts (stored in the cache) from leaking between examples.
+  config.before { Rails.cache.clear }
+
   # Lets specs call create(:expense) instead of FactoryBot.create(:expense).
   config.include FactoryBot::Syntax::Methods
 

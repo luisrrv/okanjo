@@ -22,6 +22,10 @@ RSpec.describe "Japanese model and attribute names" do
     expect(expense.errors.full_messages).to include("内容を入力してください", "金額は数値で入力してください")
   end
 
+  it "formats long dates without leading zeros" do
+    expect(I18n.l(Date.new(2026, 12, 2), format: :long)).to eq("2026年12月2日(水)")
+  end
+
   it "translates the group-integrity errors" do
     expense = build(:expense, payer: create(:member))
     expense.valid?
