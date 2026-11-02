@@ -5,6 +5,18 @@
   <%= t(".deletion_notice", date: l(@group.deletion_date, format: :long)) %>
 </p>
 
+<% if current_member %>
+  <div class="mt-4 flex items-center gap-2 text-sm">
+    <span><%= t(".you_are", name: current_member.name) %></span>
+    <%= button_to t(".change_identity"), group_identity_path(@group), method: :delete,
+          class: "text-stone-500 underline" %>
+  </div>
+<% elsif @group.members.any? %>
+  <%= render "identities/banner", group: @group %>
+<% end %>
+
+<%= render "members/members", group: @group, member: @member %>
+
 <section class="mt-6 rounded-lg bg-white p-4 shadow-sm">
   <%= label_tag :share_link, t(".share_link"), class: "block text-sm font-bold" %>
   <%= text_field_tag :share_link, group_url(@group), readonly: true,

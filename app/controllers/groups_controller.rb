@@ -23,6 +23,8 @@ class GroupsController < ApplicationController
 
   def show
     @group = Group.find_by!(token: params[:token])
+    @member = Member.new
+    remember_group(@group)
   end
 
   private

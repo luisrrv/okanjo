@@ -59,6 +59,16 @@ RSpec.describe Member, type: :model do
       expect(guest.destroy).to be(false)
     end
 
+    it "lists only members with no payments or splits as removable" do
+      group = create(:group)
+      payer = create(:member, group: group)
+      guest = create(:member, group: group)
+      idle = create(:member, group: group)
+      create(:expense, group: group, payer: payer, members: [ guest ])
+
+      expect(group.members.removable).to contain_exactly(idle)
+    end
+
     it "is allowed for a member with no expenses" do
       member = create(:member)
 

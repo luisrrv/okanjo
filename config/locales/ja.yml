@@ -30,6 +30,11 @@ ja:
         member: メンバー
     errors:
       models:
+        member:
+          # Replaces rails-i18n's "%{record}が存在しているので削除できません", which
+          # would show the raw association name ("participations").
+          restrict_dependent_destroy:
+            has_many: 支払いや割り勘に含まれているため削除できません
         expense:
           attributes:
             payer:
@@ -55,3 +60,26 @@ ja:
     show:
       deletion_notice: 変更がない場合、%{date}に削除されます
       share_link: このリンクを共有してください
+      you_are: あなた：%{name}さん
+      change_identity: 変更
+
+  members:
+    members:
+      heading: メンバー
+      you: あなた
+      remove: 削除
+      remove_confirm: "%{name}さんを削除しますか？"
+      name_placeholder: 名前
+      submit: 追加
+    create:
+      created: "%{name}さんを追加しました"
+    destroy:
+      destroyed: "%{name}さんを削除しました"
+
+  identities:
+    banner:
+      title: あなたの名前を選んでください
+      not_listed: リストにない場合は追加
+      add_me: 追加
+    create:
+      created: "%{name}さんとして表示しています"

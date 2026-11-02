@@ -1,0 +1,30 @@
+<section class="mt-6 rounded-lg bg-white p-4 shadow-sm">
+  <h2 class="text-sm font-bold"><%= t(".heading") %></h2>
+
+  <% removable_ids = group.members.removable.ids %>
+  <ul class="mt-2 divide-y divide-stone-200">
+    <% group.members.order(:id).each do |each_member| %>
+      <li class="flex items-center justify-between py-2">
+        <span>
+          <%= each_member.name %>
+          <% if each_member == current_member %>
+            <span class="ml-1 rounded-full bg-stone-100 px-2 text-xs text-stone-600"><%= t(".you") %></span>
+          <% end %>
+        </span>
+        <% if removable_ids.include?(each_member.id) %>
+          <%= button_to t(".remove"), group_member_path(group, each_member), method: :delete,
+                form: { data: { turbo_confirm: t(".remove_confirm", name: each_member.name) } },
+                class: "text-sm text-red-700" %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <%= render "shared/errors", model: member %>
+  <%= form_with model: [ group, member ], class: "mt-3 flex gap-2" do |form| %>
+    <%= form.text_field :name, placeholder: t(".name_placeholder"), required: true, maxlength: 50,
+          aria: { label: t(".name_placeholder") },
+          class: "w-full rounded-md border border-stone-300 px-3 py-2" %>
+    <%= form.submit t(".submit"), class: "rounded-md bg-stone-900 px-4 py-2 font-bold text-white" %>
+  <% end %>
+</section>
