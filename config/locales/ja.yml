@@ -124,3 +124,13 @@ ja:
       edit: 編集
       destroy: 削除
       destroy_confirm: 「%{description}」を削除しますか？
+
+  settlements:
+    settlement:
+      heading: 精算
+      row: 立て替え %{credited} · 負担 %{owed}
+      receives: "+%{amount}"
+      pays: "−%{amount}"
+      collector: "%{name}さんがまとめて精算します"
+      transfer: "%{from}さん → %{to}さん"
+      nothing: 精算はありません
