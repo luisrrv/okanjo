@@ -1,6 +1,29 @@
 require "rails_helper"
 
 RSpec.describe BalanceSheet do
+  # SQL statements issued while building the rows, ignoring schema lookups.
+  def queries_for(group)
+    count = 0
+    counter = ->(*, payload) { count += 1 unless payload[:name] == "SCHEMA" }
+    ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { BalanceSheet.new(group).rows }
+    count
+  end
+
+  def occasion_with(members:, expenses:)
+    group = create(:group)
+    people = create_list(:member, members, group: group)
+    expenses.times { create(:expense, group: group, payer: people.first, members: people) }
+    Group.find(group.id) # fresh, with nothing preloaded
+  end
+
+  it "runs the same few queries however big the occasion is (no N+1)" do
+    small = queries_for(occasion_with(members: 2, expenses: 1))
+    large = queries_for(occasion_with(members: 10, expenses: 8))
+
+    expect(large).to eq(small)
+    expect(large).to be <= 3
+  end
+
   it "is all zeros for an occasion with no expenses" do
     group = create(:group)
     create_list(:member, 2, group: group)

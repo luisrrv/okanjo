@@ -12,11 +12,21 @@ class BalanceSheet
     @group = group
   end
 
+  # Three queries whatever the group size: members, expenses, and their participations
+  # (preloaded, so share_amount and collected count them in memory). The rest is Ruby.
   def rows
-    @rows ||= @group.members.order(:id).map do |member|
-      credited = member.paid_expenses.sum(&:collected)
-      owed = member.participations.sum { |participation| participation.expense.share_amount }
-      Row.new(member:, credited:, owed:)
+    @rows ||= begin
+      credited = Hash.new(0)
+      owed = Hash.new(0)
+
+      @group.expenses.includes(:participations).each do |expense|
+        credited[expense.payer_id] += expense.collected
+        expense.participations.each { |participation| owed[participation.member_id] += expense.share_amount }
+      end
+
+      @group.members.order(:id).map do |member|
+        Row.new(member:, credited: credited[member.id], owed: owed[member.id])
+      end
     end
   end
 
