@@ -37,9 +37,12 @@ ja:
             has_many: 支払いや割り勘に含まれているため削除できません
         expense:
           attributes:
+            # These are a select and checkboxes, so "choose" (選択), not "enter" (入力).
             payer:
+              required: を選択してください
               not_in_group: はこのイベントのメンバーではありません
             members:
+              blank: を選択してください
               not_in_group: にこのイベント以外のメンバーが含まれています
 
   shared:

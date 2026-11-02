@@ -51,7 +51,7 @@ RSpec.describe "Expenses", type: :request do
       post group_expenses_path(group), params: { expense: { description: "x", amount: 1000, payer_id: aki.id, member_ids: [ "" ] } }
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("割り勘するメンバーを入力してください")
+      expect(response.body).to include("割り勘するメンバーを選択してください")
     end
 
     it "rejects a payer from another occasion" do

@@ -4,13 +4,14 @@ okanjo is a shared-expense splitting app for single occasions (a 飲み会, a tr
 it as **warikan (割り勘)** at `warikan.lrod.dev`; okanjo is the codebase name (ADR 0017).
 Decisions are recorded in [`docs/adr/`](adr/README.md), and this document summarises them.
 
-**Status (2026-10-30):** the domain model is built and tested. Everything marked
-*planned* is designed but not implemented yet.
+**Status (2026-11-02):** the domain model and the core flow (create an occasion, members,
+identity, expenses) are built and tested. Everything marked *planned* is designed but not
+implemented yet.
 
 | Area | Status |
 |---|---|
 | Domain model: groups, members, expenses, split shares | built |
-| Routes, controllers and forms (session 2) | planned |
+| Routes, controllers and forms (session 2) | built |
 | Balance sheet, settlement, Turbo Stream update (session 3) | planned |
 | Printable receipt, purge job, deploy (session 4) | planned |
 | Phase 2: auth generator, JSON API, LIFF client, LINE Login | planned, after the core ships |
@@ -97,22 +98,31 @@ erDiagram
 
 ## Key flows
 
-### Create an occasion and share it *(planned)*
+### Create an occasion and share it *(built)*
 
 ```mermaid
 sequenceDiagram
   actor Aki
+  actor Ben
   participant App as Rails app
   participant DB as SQLite
-  Aki->>App: Create occasion (optional name)
-  App->>DB: INSERT group (random token)
-  App-->>Aki: Redirect to /groups/:token
-  Aki->>App: Add members, pick "I'm Aki"
+  Aki->>App: POST /groups (occasion name, "Aki")
+  App->>DB: INSERT group (random token) + first member
   App-->>Aki: Signed cookie: token → Aki's member id
-  Aki-->>Aki: Shares the URL in the LINE chat
+  App-->>Aki: Redirect to /groups/:token
+  Aki-->>Ben: Shares the URL in the LINE chat
+  Ben->>App: GET /groups/:token
+  App-->>Ben: "Please choose your name" banner
+  Ben->>App: POST /groups/:token/identity (Ben)
+  App-->>Ben: Signed cookie: token → Ben's member id
 ```
 
-### Add an expense and settle up *(planned)*
+- Every route is nested under the token, and every record is loaded through the occasion
+  (`GroupScoped`), so another occasion's ids are a 404.
+- The cookie is a convenience, not security: it defaults the payer and marks "you". It
+  also lists this browser's recent occasions on the start page (`CurrentMember`).
+
+### Add an expense and settle up *(step 1 built; 2–3 planned)*
 
 1. Someone adds an expense: description (pre-filled お会計 N), amount, payer (defaults to
    this browser's member), and who's in the split (everyone by default). Leaving the payer

@@ -1,6 +1,6 @@
 # Spec: core flow (session 2)
 
-- Status: Draft (for Luis's review)
+- Status: Implemented (2026-11-02)
 - ADRs: 0005, 0006, 0015, 0016, 0017, 0018
 - Depends on: [domain model](domain-model.md)
 
