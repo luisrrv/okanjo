@@ -6,6 +6,7 @@ Rails.application.routes.draw do
     resources :members, only: %i[create destroy]
     resource :identity, only: %i[create destroy]
     resources :expenses, only: %i[new create edit update destroy]
+    resource :receipt, only: :show
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

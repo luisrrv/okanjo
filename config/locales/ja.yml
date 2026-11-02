@@ -65,6 +65,7 @@ ja:
       share_link: このリンクを共有してください
       you_are: あなた：%{name}さん
       change_identity: 変更
+      receipt_link: 明細を印刷
 
   members:
     members:
@@ -134,3 +135,19 @@ ja:
       collector: "%{name}さんがまとめて精算します"
       transfer: "%{from}さん → %{to}さん"
       nothing: 精算はありません
+
+  receipts:
+    show:
+      title: 割り勘の明細
+      printed_on: 発行日：%{date}
+      print: 印刷・PDFで保存
+      back: 戻る
+      expenses: 支払い一覧
+      paid_by: 支払い：%{payer}さん
+      split_among: 割り勘：%{names}（1人 %{share}）
+      honorific_name: "%{name}さん"
+      name_separator: 、
+      total: 合計
+      settlement: 精算
+      empty: 支払いはありません
+      footer: 割り勘（%{url}）で作成

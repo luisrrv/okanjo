@@ -5,7 +5,10 @@
 <%# Live refreshes morph this page; keep-edits stops them wiping a field mid-typing (ADR 0019). %>
 <div data-controller="keep-edits"
      data-action="input->keep-edits#mark submit->keep-edits#unmark turbo:before-morph-element@document->keep-edits#keep">
-  <h1 class="text-2xl font-bold"><%= group_title(@group) %></h1>
+  <div class="flex items-baseline justify-between gap-2">
+    <h1 class="text-2xl font-bold"><%= group_title(@group) %></h1>
+    <%= link_to t(".receipt_link"), group_receipt_path(@group), class: "shrink-0 text-sm text-stone-500 underline" %>
+  </div>
   <p class="mt-1 text-sm text-stone-500">
     <%= t(".deletion_notice", date: l(@group.deletion_date, format: :long)) %>
   </p>

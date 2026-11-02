@@ -1,0 +1,81 @@
+<% content_for :title, "#{t(".title")} · #{group_title(@group)}" %>
+
+<div class="mb-4 flex items-center justify-between print:hidden" data-controller="print">
+  <%= link_to t(".back"), @group, class: "text-sm text-stone-500 underline" %>
+  <button type="button" data-action="print#print" class="rounded-md bg-stone-900 px-4 py-2 text-sm font-bold text-white">
+    <%= t(".print") %>
+  </button>
+</div>
+
+<article class="rounded-lg bg-white p-6 shadow-sm print:p-0 print:shadow-none">
+  <header class="border-b border-stone-300 pb-3">
+    <p class="text-sm text-stone-500"><%= t(".title") %></p>
+    <h1 class="text-2xl font-bold"><%= group_title(@group) %></h1>
+    <p class="mt-1 text-sm text-stone-500"><%= t(".printed_on", date: l(Date.current, format: :long)) %></p>
+  </header>
+
+  <section class="mt-4">
+    <h2 class="text-sm font-bold"><%= t(".expenses") %></h2>
+    <% if @expenses.any? %>
+      <ul class="mt-2 divide-y divide-stone-200">
+        <% @expenses.each do |expense| %>
+          <li class="break-inside-avoid py-2">
+            <div class="flex justify-between gap-2">
+              <span class="font-bold"><%= expense.description %></span>
+              <span class="font-bold"><%= number_to_currency(expense.amount) %></span>
+            </div>
+            <p class="text-sm text-stone-600"><%= t(".paid_by", payer: expense.payer.name) %></p>
+            <p class="text-sm text-stone-600">
+              <%= t(".split_among",
+                    names: expense.participations.map(&:member).sort_by(&:id).map { |member| t(".honorific_name", name: member.name) }.join(t(".name_separator")),
+                    share: number_to_currency(expense.share_amount)) %>
+            </p>
+          </li>
+        <% end %>
+      </ul>
+      <p class="mt-2 flex justify-between border-t border-stone-300 pt-2 font-bold">
+        <span><%= t(".total") %></span>
+        <span><%= number_to_currency(@expenses.sum(&:amount)) %></span>
+      </p>
+    <% else %>
+      <p class="mt-2 text-sm text-stone-500"><%= t(".empty") %></p>
+    <% end %>
+  </section>
+
+  <section class="mt-6 break-inside-avoid">
+    <h2 class="text-sm font-bold"><%= t(".settlement") %></h2>
+    <ul class="mt-2 divide-y divide-stone-200">
+      <% @balance_sheet.rows.each do |row| %>
+        <li class="flex justify-between py-1 text-sm">
+          <span><%= row.member.name %></span>
+          <span>
+            <% if row.balance.positive? %>
+              <%= t("settlements.settlement.receives", amount: number_to_currency(row.balance)) %>
+            <% elsif row.balance.negative? %>
+              <%= t("settlements.settlement.pays", amount: number_to_currency(-row.balance)) %>
+            <% else %>
+              <%= number_to_currency(0) %>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+    <% if @settlement.transfers.any? %>
+      <p class="mt-3 text-sm font-bold"><%= t("settlements.settlement.collector", name: @settlement.collector.name) %></p>
+      <ul class="mt-1 space-y-1">
+        <% @settlement.transfers.each do |transfer| %>
+          <li class="flex justify-between text-sm">
+            <span><%= t("settlements.settlement.transfer", from: transfer.from.name, to: transfer.to.name) %></span>
+            <span class="font-bold"><%= number_to_currency(transfer.amount) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="mt-2 text-sm text-stone-500"><%= t("settlements.settlement.nothing") %></p>
+    <% end %>
+  </section>
+
+  <footer class="mt-6 border-t border-stone-300 pt-2 text-xs text-stone-500">
+    <%= t(".footer", url: root_url) %>
+  </footer>
+</article>
