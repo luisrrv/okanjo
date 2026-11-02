@@ -1,0 +1,5 @@
+<% content_for :title, t(".title") %>
+
+<h1 class="mb-4 text-2xl font-bold"><%= t(".title") %></h1>
+<%= render "form", expense: @expense %>
+<p class="mt-4 text-center"><%= link_to t(".back"), @group, class: "text-sm text-stone-500 underline" %></p>

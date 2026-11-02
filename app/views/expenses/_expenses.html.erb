@@ -1,0 +1,16 @@
+<section class="mt-6 rounded-lg bg-white p-4 shadow-sm">
+  <div class="flex items-center justify-between">
+    <h2 class="text-sm font-bold"><%= t(".heading") %></h2>
+    <%= link_to t(".add"), new_group_expense_path(group),
+          class: "rounded-md bg-stone-900 px-3 py-1 text-sm font-bold text-white" %>
+  </div>
+
+  <% expenses = group.expenses.order(created_at: :desc).includes(:payer, :participations) %>
+  <% if expenses.any? %>
+    <ul class="mt-2 divide-y divide-stone-200">
+      <%= render partial: "expenses/expense", collection: expenses %>
+    </ul>
+  <% else %>
+    <p class="mt-2 text-sm text-stone-500"><%= t(".empty") %></p>
+  <% end %>
+</section>

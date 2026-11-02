@@ -58,6 +58,17 @@ RSpec.describe Expense, type: :model do
     end
   end
 
+  describe "#payer_in_split?" do
+    it "is true when the payer is in the split, false when left out" do
+      group = create(:group)
+      dai = create(:member, group: group)
+      aki = create(:member, group: group)
+
+      expect(create(:expense, group: group, payer: dai, members: [ dai, aki ]).payer_in_split?).to be(true)
+      expect(create(:expense, group: group, payer: dai, members: [ aki ]).payer_in_split?).to be(false)
+    end
+  end
+
   describe "validations" do
     it "requires a description" do
       expect(build(:expense, description: "   ")).not_to be_valid

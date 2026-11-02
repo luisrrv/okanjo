@@ -31,6 +31,11 @@ class Expense < ApplicationRecord
     collected - amount
   end
 
+  # Uses the loaded participations when they're preloaded, so a list doesn't N+1.
+  def payer_in_split?
+    participations.any? { |participation| participation.member_id == payer_id }
+  end
+
   private
     def payer_belongs_to_group
       errors.add(:payer, :not_in_group) if payer && payer.group_id != group_id

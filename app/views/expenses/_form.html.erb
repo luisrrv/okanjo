@@ -1,0 +1,49 @@
+<%= form_with model: [ expense.group, expense ], class: "space-y-4 rounded-lg bg-white p-4 shadow-sm",
+      data: {
+        controller: "payer-split",
+        payer_split_message_value: t(".confirm_payer_out"),
+        payer_split_message_without_amount_value: t(".confirm_payer_out_without_amount"),
+        payer_split_name_value: t(".honorific_name"),
+        payer_split_separator_value: t(".name_separator"),
+        payer_split_currency_value: t(".currency")
+      } do |form| %>
+  <%= render "shared/errors", model: expense %>
+
+  <div>
+    <%= form.label :description, class: "block text-sm font-bold" %>
+    <%= form.text_field :description, required: true, maxlength: 100,
+          class: "mt-1 w-full rounded-md border border-stone-300 px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= form.label :amount, class: "block text-sm font-bold" %>
+    <div class="mt-1 flex items-center gap-2">
+      <%= form.number_field :amount, required: true, min: 1, max: Expense::MAX_AMOUNT, step: 1,
+            inputmode: "numeric", data: { payer_split_target: "amount" },
+            class: "w-full rounded-md border border-stone-300 px-3 py-2" %>
+      <span><%= t(".yen") %></span>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :payer_id, t(".payer"), class: "block text-sm font-bold" %>
+    <%= form.collection_select :payer_id, expense.group.members.order(:id), :id, :name,
+          { prompt: t(".payer_prompt") },
+          { required: true, data: { payer_split_target: "payer", action: "change->payer-split#payerChanged" },
+            class: "mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2" } %>
+  </div>
+
+  <fieldset>
+    <legend class="text-sm font-bold"><%= t(".split") %></legend>
+    <div class="mt-1 flex flex-wrap gap-x-4 gap-y-2">
+      <%= form.collection_check_boxes :member_ids, expense.group.members.order(:id), :id, :name do |box| %>
+        <%= box.label class: "flex items-center gap-2" do %>
+          <%= box.check_box data: { payer_split_target: "member", action: "change->payer-split#memberChanged", name: box.text } %>
+          <%= box.text %>
+        <% end %>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <%= form.submit t(".submit"), class: "w-full rounded-md bg-stone-900 px-4 py-3 font-bold text-white" %>
+<% end %>

@@ -1,0 +1,21 @@
+<li class="py-3">
+  <div class="flex items-baseline justify-between gap-2">
+    <span class="font-bold"><%= expense.description %></span>
+    <span class="font-bold"><%= number_to_currency(expense.amount) %></span>
+  </div>
+  <p class="text-sm text-stone-600">
+    <%= t(".share", share: number_to_currency(expense.share_amount), count: expense.participations.size) %>
+    <% if expense.odd_yen.positive? %>
+      · <%= t(".odd_yen", amount: number_to_currency(expense.odd_yen), payer: expense.payer.name) %>
+    <% end %>
+  </p>
+  <p class="text-sm text-stone-600">
+    <%= t(expense.payer_in_split? ? ".payer" : ".payer_not_sharing", payer: expense.payer.name) %>
+  </p>
+  <div class="mt-1 flex gap-3 text-sm">
+    <%= link_to t(".edit"), edit_group_expense_path(expense.group, expense), class: "text-stone-500 underline" %>
+    <%= button_to t(".destroy"), group_expense_path(expense.group, expense), method: :delete,
+          form: { data: { turbo_confirm: t(".destroy_confirm", description: expense.description) } },
+          class: "text-red-700" %>
+  </div>
+</li>

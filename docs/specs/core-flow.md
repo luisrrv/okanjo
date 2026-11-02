@@ -80,7 +80,7 @@ returns a 404.
 - The "who are you?" banner, when needed.
 - **Members:** the list, with a "you" marker and a remove button for members with no
   expenses. A one-field inline form adds a member.
-- **Expenses:** newest first. Each shows description, amount, payer, "¥{share} × {n}
+- **Expenses:** newest first. Each shows description, amount, payer, "1人 {share}円 × {n}
   people", the odd yen when there is any, and "{payer} paid · not sharing" when the payer
   is left out of the split. Each has edit and delete. There's an "add expense" button.
 - With no expenses yet: an empty state pointing to "add expense".
@@ -137,6 +137,9 @@ before launch, especially the confirmation sentence.
 | `expenses.expense.payer_not_sharing` | 支払い：%{payer}さん（割り勘の対象外） | Paid by %{payer} (not part of the split) |
 | `flash.created` / `updated` / `destroyed` | 追加しました / 更新しました / 削除しました | Added / Updated / Deleted |
 
+Amounts are shown as 8,000円 (`number_to_currency` with rails-i18n's Japanese format), which
+reads more naturally in Japanese UI than ¥8,000.
+
 Model and attribute names for error messages: Group = イベント, Member = メンバー,
 Expense = 支払い, plus 名前, 内容 (description), 金額 (amount) and 支払った人 (payer).
 "お会計" only appears as the default expense label (お会計 1, "bill 1").
@@ -170,7 +173,7 @@ Expense = 支払い, plus 名前, 内容 (description), 金額 (amount) and 支�
    - create an occasion;
    - add two members;
    - add an expense, leave the payer out of the split and accept the confirmation;
-   - see "¥2,667 × 3人" (2,667 yen each, 3 people) and the "not sharing" label.
+   - see "1人 2,667円 × 3人" (2,667 yen each, 3 people) and the "not sharing" label.
 3. `config.i18n.raise_on_missing_translations = true` in the test environment, so a
    missing key fails a spec.
 4. `bundle exec rspec`, `bin/rubocop`, `bin/brakeman`.

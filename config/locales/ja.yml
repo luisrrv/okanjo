@@ -83,3 +83,41 @@ ja:
       add_me: 追加
     create:
       created: "%{name}さんとして表示しています"
+
+  expenses:
+    form:
+      default_description: お会計 %{number}
+      yen: 円
+      payer: 支払った人
+      payer_prompt: 選択してください
+      split: 割り勘するメンバー
+      submit: 保存する
+      confirm_payer_out: "%{payer}さんは割り勘に含まれません。%{others}で%{amount}を割り勘し、1人%{share}になります。よろしいですか？"
+      confirm_payer_out_without_amount: "%{payer}さんは割り勘に含まれません。よろしいですか？"
+      honorific_name: "%{name}さん"
+      name_separator: 、
+      currency: "%{amount}円"
+    new:
+      title: 支払いを追加
+      back: 戻る
+    edit:
+      title: 支払いを編集
+      back: 戻る
+    create:
+      created: 支払いを追加しました
+    update:
+      updated: 支払いを更新しました
+    destroy:
+      destroyed: 支払いを削除しました
+    expenses:
+      heading: 支払い
+      add: 追加
+      empty: まだ支払いがありません。「追加」から記録しましょう。
+    expense:
+      share: 1人 %{share} × %{count}人
+      odd_yen: 端数 %{amount}（%{payer}さん）
+      payer: 支払い：%{payer}さん
+      payer_not_sharing: 支払い：%{payer}さん（割り勘の対象外）
+      edit: 編集
+      destroy: 削除
+      destroy_confirm: 「%{description}」を削除しますか？
