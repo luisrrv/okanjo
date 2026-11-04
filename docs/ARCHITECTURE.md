@@ -4,16 +4,17 @@ okanjo is a shared-expense splitting app for single occasions (a 飲み会, a tr
 it as **warikan (割り勘)** at `warikan.lrod.dev`; okanjo is the codebase name (ADR 0017).
 Decisions are recorded in [`docs/adr/`](adr/README.md), and this document summarises them.
 
-**Status (2026-11-02):** the domain model, the core flow (create an occasion, members,
-identity, expenses), balances, settlement and live refresh are built and tested.
-Everything marked *planned* is designed but not implemented yet.
+**Status (2026-11-04):** everything in the core is built and tested except the deploy:
+the domain model, the core flow, balances, settlement, live refresh, the printable receipt
+and the purge job. Everything marked *planned* is designed but not implemented yet.
 
 | Area | Status |
 |---|---|
 | Domain model: groups, members, expenses, split shares | built |
 | Routes, controllers and forms (session 2) | built |
 | Balance sheet, settlement, live refresh (session 3) | built |
-| Printable receipt, purge job, deploy (session 4) | planned |
+| Printable receipt, purge job (session 4) | built |
+| Deploy (session 4) | planned: waiting for a server |
 | Phase 2: auth generator, JSON API, LIFF client, LINE Login | planned, after the core ships |
 
 ## System context
@@ -22,15 +23,17 @@ Everything marked *planned* is designed but not implemented yet.
 flowchart LR
   user([Browser]) -- HTTPS --> proxy
 
-  subgraph vps [VPS in Tokyo: one Docker container via Kamal]
+  subgraph vps [Server in Japan: one Docker container via Kamal]
     proxy[kamal-proxy<br/>Let's Encrypt TLS] --> puma
     subgraph app [Rails 8 app]
       puma[Puma<br/>Hotwire views] 
       jobs[Solid Queue<br/>inside Puma]
+      receipt[Receipt page<br/>print / Save as PDF]
     end
     puma --> primary[(SQLite: primary)]
+    puma --- receipt
     jobs --> queue[(SQLite: queue)]
-    jobs -- daily purge --> primary
+    jobs -- daily purge, 4am JST --> primary
     puma --> cache[(SQLite: cache)]
     puma -- Action Cable --> cable[(SQLite: cable)]
   end
@@ -146,13 +149,23 @@ sequenceDiagram
    transfer, to or from the collector. That's at most n−1 transfers, chosen because
    people trust "pay the 幹事", not because it's the fewest possible (ADR 0013).
 
-### Retention and the purge job *(planned)*
+### Retention and the purge job *(built)*
 
 - An occasion is deleted **30 days after its last change**. Viewing doesn't count. The
   occasion page shows the deletion date, and the printable receipt is how users keep a
   record (ADR 0016).
-- A daily Solid Queue recurring task (`config/recurring.yml`) deletes stale groups with
-  `Group.where(updated_at: ...30.days.ago).delete_all` (ADR 0012).
+- `PurgeStaleGroupsJob` runs as a Solid Queue recurring task (`config/recurring.yml`,
+  `every day at 4am Asia/Tokyo`, production only). It runs `Group.stale.delete_all`: one
+  `DELETE` statement, with the children removed by the database cascades (ADR 0012).
+- `Group.stale` is strictly older than 30 days (`...RETENTION.ago`), so an occasion is never
+  deleted before the date its page shows. A missed run catches up the next day.
+
+### The receipt *(built)*
+
+`GET /groups/:token/receipt` shows every expense with who was in its split, the total,
+the balances and the transfers, laid out for paper. A Stimulus `print` controller calls
+`window.print()`, Tailwind `print:` variants hide the app's header and buttons, and the
+browser's "Save as PDF" produces the file, with no PDF gem (ADR 0016).
 
 ### Two deletion routes
 
@@ -166,9 +179,15 @@ A member who paid for something or is in a split can't be deleted on their own
 
 ## Deployment and CI
 
-- **Deploy *(planned)*:** Kamal 2 to a Tokyo VPS (provider TBD) as the last step of the
-  core. kamal-proxy gets Let's Encrypt certificates. `.dev` is HTTPS-only, so TLS is on from
-  the first deploy. Kamal's local registry pushes the image over SSH (ADR 0017).
+- **Deploy *(planned)*:** Kamal 2 to a server in Japan, free tier first: Oracle Cloud
+  Always Free (ARM, Osaka), with Sakura VPS Ishikari 1 GB (880円/month) as the fallback
+  (ADR 0017, hosting update). kamal-proxy gets Let's Encrypt certificates. `.dev` is
+  HTTPS-only, so TLS is on from the first deploy. Kamal's local registry pushes the image
+  over SSH.
+- **Status:** the Oracle network (`okanjo-vcn`, public subnet) exists, but creating the
+  free ARM server fails with "out of capacity" in Osaka. Retrying; if it keeps failing,
+  either upgrade the account to pay-as-you-go (staying within the free limits) or use the
+  Sakura fallback.
 - **Database:** SQLite files in `storage/` on a Docker volume, with separate databases for
   primary data, the cache and the queue.
 - **Seeds:** the night-out demo, for development and test only. `db:prepare` would
