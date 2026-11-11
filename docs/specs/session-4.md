@@ -80,6 +80,32 @@ confirmation).
   builder `arch: arm64`, or `amd64` for Sakura), `.kamal/secrets` reading `RAILS_MASTER_KEY`
   without committing it, and the exact firewall steps for Oracle (security list plus the
   server's own firewall rules for ports 80 and 443).
+- **Prepared ahead (2026-11-11):** `config/deploy.yml` has `proxy: ssl: true, host:
+  warikan.lrod.dev`, `builder: arch: arm64` and `ssh: user: ubuntu` with
+  `~/.ssh/okanjo_deploy`. Production enables `assume_ssl`, `force_ssl` (except `/up`) and
+  `config.hosts = ["warikan.lrod.dev"]`. Only the server IP placeholder remains.
+  - Checked locally: the production image builds natively on the Mac (about 6 minutes from
+    cold) and starts. `/up` returns 200; the start page returns 200 for `warikan.lrod.dev`
+    and 403 for any other host; the Tailwind and JS assets are served; `db:prepare` creates
+    all four SQLite databases with no seed data; Solid Queue starts inside Puma with
+    `purge_stale_groups` scheduled.
+- **Server bootstrap (once, before `kamal setup`).** Kamal connects as `ubuntu`, not root,
+  so Docker must already be installed:
+  1. Oracle console: `okanjo-vcn` → **Security Lists** → *Default Security List* → **Add
+     Ingress Rules**: source `0.0.0.0/0`, TCP, destination port `80`, and the same for
+     `443`. Port 22 is already open.
+  2. On the server (`ssh -i ~/.ssh/okanjo_deploy ubuntu@<IP>`), Oracle's Ubuntu image also
+     blocks ports in its own firewall:
+     `sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT`, the same
+     for `443`, then `sudo netfilter-persistent save`.
+  3. Install Docker and let `ubuntu` use it:
+     `curl -fsSL https://get.docker.com | sudo sh` and `sudo usermod -aG docker ubuntu`,
+     then log out and back in.
+  4. Gandi: an A record `warikan` → the server's IP. Let's Encrypt needs it to resolve
+     before the first deploy, or the certificate request fails.
+  5. Replace the IP placeholder in `config/deploy.yml`.
+  - Sakura fallback: the same steps, minus step 1 (Sakura has no security list by default;
+    check its packet filter setting), and set `builder: arch: amd64`.
 - **First deploy:** `bin/kamal setup`, run with Luis's OK. Check: HTTPS works, the
   occasion flow works, and live refresh works over the WebSocket through kamal-proxy.
 - **Follow-up in the old repo:** a Netlify `_redirects` rule sending warikan-jp.netlify.app

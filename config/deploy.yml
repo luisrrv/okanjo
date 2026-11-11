@@ -7,6 +7,7 @@ image: okanjo
 # Deploy to these servers.
 servers:
   web:
+    # Placeholder until the server exists: the Oracle (or Sakura) public IP (ADR 0017).
     - 192.168.0.1
   # job:
   #   hosts:
@@ -20,9 +21,9 @@ servers:
 #
 # Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
 #
-# proxy:
-#   ssl: true
-#   host: app.example.com
+proxy:
+  ssl: true
+  host: warikan.lrod.dev
 
 # Where you keep your container images.
 registry:
@@ -78,7 +79,9 @@ asset_path: /rails/public/assets
 
 # Configure the image builder.
 builder:
-  arch: amd64
+  # Oracle Always Free is ARM, which the Apple Silicon Mac builds natively.
+  # Use amd64 for the Sakura fallback (ADR 0017, hosting update).
+  arch: arm64
 
   # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
   # remote: ssh://docker@docker-builder-server
@@ -90,9 +93,10 @@ builder:
   #   - GITHUB_TOKEN
   #   - RAILS_MASTER_KEY
 
-# Use a different ssh user than root
-# ssh:
-#   user: app
+# Ubuntu cloud images log in as "ubuntu", with a key made just for this server.
+ssh:
+  user: ubuntu
+  keys: [ "~/.ssh/okanjo_deploy" ]
 
 # Use accessory services (secrets come from .kamal/secrets).
 # accessories:
