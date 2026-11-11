@@ -26,6 +26,10 @@ messages and formats. The README and `docs/` stay in English.
 
 ## Consequences
 - No user-facing string is typed directly into a view or controller.
+- Exception (2026-11-11): the static error pages in `public/` (400, 404, 406, 422, 500) have
+  their Japanese written directly into the HTML. Production serves them from disk without
+  running the app, so they still work when the app itself fails, and so they can't use the
+  locale files. A spec checks they stay Japanese.
 - The test environment sets `config.i18n.raise_on_missing_translations = true`, so a
   missing key fails a spec instead of reaching a user.
 - Model and attribute names used in error messages (e.g. 名前, 金額) are defined under
