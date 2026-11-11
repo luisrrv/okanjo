@@ -110,6 +110,9 @@ returns a 404.
 
 ## Copy (ja.yml)
 
+Revised after the native-speaker review (2026-11-11). `config/locales/ja.yml` is the source of
+truth; this table is the original draft.
+
 Glosses are in English. Wording checked against how established Japanese split-the-bill
 apps phrase things (立て替え, 支払者, 対象メンバー). A native speaker should still review it
 before launch, especially the confirmation sentence.

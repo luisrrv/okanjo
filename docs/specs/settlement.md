@@ -91,6 +91,10 @@ At the top of the occasion page, above 支払い (payments) and メンバー (me
   expenses or every balance is zero.
 
 ### Copy
+
+Revised after the native-speaker review (2026-11-11). `config/locales/ja.yml` is the source of
+truth; this table is the original draft.
+
 Glosses are in English. A native speaker should review it before launch.
 
 | Key | Japanese | English gloss |

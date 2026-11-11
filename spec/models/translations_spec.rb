@@ -19,14 +19,28 @@ RSpec.describe "Japanese model and attribute names" do
     expense = build(:expense, description: "", amount: nil)
     expense.valid?
 
-    expect(expense.errors.full_messages).to include("内容を入力してください", "金額は数値で入力してください")
+    expect(expense.errors.full_messages).to include("内容を入力してください", "金額を入力してください")
   end
 
   it "asks to choose, not enter, the payer and the members in the split" do
     expense = build(:expense, payer: nil, members: [])
     expense.valid?
 
-    expect(expense.errors.full_messages).to include("支払った人を選択してください", "割り勘するメンバーを選択してください")
+    expect(expense.errors.full_messages).to include("支払った人を選択してください", "割り勘の対象メンバーを選択してください")
+  end
+
+  it "words each amount problem as the copy review asked (F9-F11)" do
+    messages = [ "abc", 0, 2_000_000_001 ].map do |amount|
+      expense = build(:expense, amount: amount)
+      expense.valid?
+      expense.errors.full_messages
+    end
+
+    expect(messages).to eq([
+      [ "金額を数字で入力してください" ],
+      [ "金額は1円以上で入力してください" ],
+      [ "金額が上限（2,000,000,000円）を超えています" ]
+    ])
   end
 
   it "formats long dates without leading zeros" do
@@ -37,6 +51,6 @@ RSpec.describe "Japanese model and attribute names" do
     expense = build(:expense, payer: create(:member))
     expense.valid?
 
-    expect(expense.errors.full_messages).to include("支払った人はこのイベントのメンバーではありません")
+    expect(expense.errors.full_messages).to include("支払った人がこのイベントのメンバーに含まれていません")
   end
 end

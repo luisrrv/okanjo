@@ -22,7 +22,7 @@ RSpec.describe Member, type: :model do
       duplicate = build(:member, group: group, name: "yuki")
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors.full_messages).to include("名前はすでに存在します")
+      expect(duplicate.errors.full_messages).to include("名前が同じメンバーがすでにいます")
     end
 
     it "can repeat across groups" do

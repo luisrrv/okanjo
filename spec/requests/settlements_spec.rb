@@ -10,8 +10,8 @@ RSpec.describe "The settle-up section", type: :request do
 
     get group_path(group)
 
-    expect(response.body).to include("立て替え 20,000円 · 負担 4,000円", "+16,000円", "−8,500円")
-    expect(response.body).to include("Akiさんがまとめて精算します")
+    expect(response.body).to include("立替額 20,000円 · 負担額 4,000円", "+16,000円", "−8,500円")
+    expect(response.body).to include("Akiさんが代表して精算します")
     expect(response.body).to include("Chieさん → Akiさん", "8,500円", "Akiさん → Benさん", "2,000円")
   end
 
@@ -21,6 +21,6 @@ RSpec.describe "The settle-up section", type: :request do
 
     get group_path(group)
 
-    expect(response.body).to include("精算はありません")
+    expect(response.body).to include("精算する金額はありません")
   end
 end

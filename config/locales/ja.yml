@@ -25,7 +25,7 @@ ja:
         description: 内容
         amount: 金額
         payer: 支払った人
-        members: 割り勘するメンバー
+        members: 割り勘の対象メンバー
       participation:
         member: メンバー
     errors:
@@ -34,16 +34,23 @@ ja:
           # Replaces rails-i18n's "%{record}が存在しているので削除できません", which
           # would show the raw association name ("participations").
           restrict_dependent_destroy:
-            has_many: 支払いや割り勘に含まれているため削除できません
+            has_many: このメンバーは支払いまたは割り勘の対象に含まれているため、削除できません
+          attributes:
+            name:
+              taken: が同じメンバーがすでにいます
         expense:
           attributes:
             # These are a select and checkboxes, so "choose" (選択), not "enter" (入力).
             payer:
               required: を選択してください
-              not_in_group: はこのイベントのメンバーではありません
+              not_in_group: がこのイベントのメンバーに含まれていません
             members:
               blank: を選択してください
-              not_in_group: にこのイベント以外のメンバーが含まれています
+              not_in_group: に別のイベントのメンバーが含まれています
+            amount:
+              not_a_number: を数字で入力してください
+              greater_than: は1円以上で入力してください
+              less_than_or_equal_to: が上限（2,000,000,000円）を超えています
 
   shared:
     errors:
@@ -61,11 +68,11 @@ ja:
     create:
       created: イベントを作成しました
     show:
-      deletion_notice: 変更がない場合、%{date}に削除されます
+      deletion_notice: 変更がなければ、%{date}に自動で削除されます
       share_link: このリンクを共有してください
       you_are: あなた：%{name}さん
       change_identity: 変更
-      receipt_link: 明細を印刷
+      receipt_link: 精算明細を印刷
 
   members:
     members:
@@ -82,22 +89,22 @@ ja:
 
   identities:
     banner:
-      title: あなたの名前を選んでください
-      not_listed: リストにない場合は追加
+      title: ご自身の名前を選んでください
+      not_listed: 名前がない場合は追加してください
       add_me: 追加
     create:
       created: "%{name}さんとして表示しています"
 
   expenses:
     form:
-      default_description: お会計 %{number}
+      default_description: 支払い %{number}
       yen: 円
       payer: 支払った人
       payer_prompt: 選択してください
-      split: 割り勘するメンバー
+      split: 割り勘の対象メンバー
       submit: 保存する
-      confirm_payer_out: "%{payer}さんは割り勘に含まれません。%{others}で%{amount}を割り勘し、1人%{share}になります。よろしいですか？"
-      confirm_payer_out_without_amount: "%{payer}さんは割り勘に含まれません。よろしいですか？"
+      confirm_payer_out: "%{payer}さんは割り勘の対象外です。%{amount}を%{others}で分け、1人あたり%{share}になります。この内容でよろしいですか？"
+      confirm_payer_out_without_amount: "%{payer}さんを割り勘の対象から外しますか？"
       honorific_name: "%{name}さん"
       name_separator: 、
       currency: "%{amount}円"
@@ -116,12 +123,12 @@ ja:
     expenses:
       heading: 支払い
       add: 追加
-      empty: まだ支払いがありません。「追加」から記録しましょう。
+      empty: 支払いはまだ登録されていません。「追加」から登録してください。
     expense:
-      share: 1人 %{share} × %{count}人
-      odd_yen: 端数 %{amount}（%{payer}さん）
-      payer: 支払い：%{payer}さん
-      payer_not_sharing: 支払い：%{payer}さん（割り勘の対象外）
+      share: 1人あたり %{share} × %{count}人
+      odd_yen: 端数の%{amount}は%{payer}さんが受け取ります
+      payer: 支払った人：%{payer}さん
+      payer_not_sharing: 支払った人：%{payer}さん（本人は割り勘の対象外）
       edit: 編集
       destroy: 削除
       destroy_confirm: 「%{description}」を削除しますか？
@@ -129,22 +136,22 @@ ja:
   settlements:
     settlement:
       heading: 精算
-      row: 立て替え %{credited} · 負担 %{owed}
+      row: 立替額 %{credited} · 負担額 %{owed}
       receives: "+%{amount}"
       pays: "−%{amount}"
-      collector: "%{name}さんがまとめて精算します"
+      collector: "%{name}さんが代表して精算します"
       transfer: "%{from}さん → %{to}さん"
-      nothing: 精算はありません
+      nothing: 精算する金額はありません
 
   receipts:
     show:
-      title: 割り勘の明細
+      title: 割り勘の精算明細
       printed_on: 発行日：%{date}
-      print: 印刷・PDFで保存
+      print: 印刷／PDFで保存
       back: 戻る
       expenses: 支払い一覧
-      paid_by: 支払い：%{payer}さん
-      split_among: 割り勘：%{names}（1人 %{share}）
+      paid_by: 支払った人：%{payer}さん
+      split_among: 割り勘の対象：%{names}（1人あたり %{share}）
       honorific_name: "%{name}さん"
       name_separator: 、
       total: 合計

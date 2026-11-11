@@ -122,7 +122,9 @@ expense.odd_yen       # collected - amount; the お釣り the payer keeps
 
 - **D1:** groups get an optional `name` (e.g. 忘年会), at most 50 characters. When it's
   blank, the creation date is shown instead.
-- **D2:** `description` is required. The new-expense form pre-fills お会計 N, where N is the
+- **D2 (updated 2026-11-11):** the default label is now 支払い N. A native-speaker review
+  pointed out that お会計 means a restaurant bill and fits trips less well; Luis changed it.
+- **D2 (original):** `description` is required. The new-expense form pre-fills お会計 N, where N is the
   group's expense count + 1, and the user can overwrite it. Labels are plain text once
   saved, so after a deletion a number can repeat. That's accepted because the user sees and
   can edit them. The model has no defaulting logic.

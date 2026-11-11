@@ -31,6 +31,10 @@ explains the design, and a deploy to `warikan.lrod.dev`.
   so the query count stays the same whatever the size.
 
 ### Copy
+
+Revised after the native-speaker review (2026-11-11). `config/locales/ja.yml` is the source of
+truth; this table is the original draft.
+
 Glosses are in English. A native speaker should review it before launch.
 
 | Key | Japanese | English gloss |

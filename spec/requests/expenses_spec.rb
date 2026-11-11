@@ -15,7 +15,7 @@ RSpec.describe "Expenses", type: :request do
 
       get new_group_expense_path(group)
 
-      expect(response.body).to include('value="お会計 2"')
+      expect(response.body).to include('value="支払い 2"')
       expect(response.body).to match(/<option selected="selected" value="#{ben.id}">Ben<\/option>/)
       expect(response.body.scan(/type="checkbox" value="\d+" checked="checked"/).size).to eq(2)
     end
@@ -30,7 +30,7 @@ RSpec.describe "Expenses", type: :request do
         .to change(group.expenses, :count).by(1)
 
       follow_redirect!
-      expect(response.body).to include("支払いを追加しました", "1人 334円 × 3人", "端数 2円")
+      expect(response.body).to include("支払いを追加しました", "1人あたり 334円 × 3人", "端数の2円は")
     end
 
     it "labels a payer who is left out of the split" do
@@ -41,7 +41,7 @@ RSpec.describe "Expenses", type: :request do
       post group_expenses_path(group), params: expense_params(payer: dai, members: drinkers, amount: 8000)
       follow_redirect!
 
-      expect(response.body).to include("1人 2,667円 × 3人", "支払い：Daiさん（割り勘の対象外）")
+      expect(response.body).to include("1人あたり 2,667円 × 3人", "支払った人：Daiさん（本人は割り勘の対象外）")
     end
 
     it "re-renders with a Japanese error when nobody is in the split" do
@@ -51,7 +51,7 @@ RSpec.describe "Expenses", type: :request do
       post group_expenses_path(group), params: { expense: { description: "x", amount: 1000, payer_id: aki.id, member_ids: [ "" ] } }
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("割り勘するメンバーを選択してください")
+      expect(response.body).to include("割り勘の対象メンバーを選択してください")
     end
 
     it "rejects a payer from another occasion" do
@@ -61,7 +61,7 @@ RSpec.describe "Expenses", type: :request do
       post group_expenses_path(group), params: expense_params(payer: create(:member), members: [ aki ])
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("支払った人はこのイベントのメンバーではありません")
+      expect(response.body).to include("支払った人がこのイベントのメンバーに含まれていません")
     end
 
     it "rejects a member in the split from another occasion" do
@@ -71,7 +71,7 @@ RSpec.describe "Expenses", type: :request do
       post group_expenses_path(group), params: expense_params(payer: aki, members: [ aki, create(:member) ])
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("割り勘するメンバーにこのイベント以外のメンバーが含まれています")
+      expect(response.body).to include("割り勘の対象メンバーに別のイベントのメンバーが含まれています")
     end
 
     it "limits each IP to 30 new expenses a minute" do

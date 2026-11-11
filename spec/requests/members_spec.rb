@@ -20,7 +20,7 @@ RSpec.describe "Members", type: :request do
       post group_members_path(group), params: { member: { name: "yuki" } }
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("名前はすでに存在します")
+      expect(response.body).to include("名前が同じメンバーがすでにいます")
     end
 
     it "remembers you when you add yourself from the banner" do
@@ -61,7 +61,7 @@ RSpec.describe "Members", type: :request do
       expect { delete group_member_path(expense.group, expense.payer) }.not_to change(Member, :count)
 
       follow_redirect!
-      expect(response.body).to include("支払いや割り勘に含まれているため削除できません")
+      expect(response.body).to include("このメンバーは支払いまたは割り勘の対象に含まれているため、削除できません")
     end
 
     it "is not found for a member of another occasion" do

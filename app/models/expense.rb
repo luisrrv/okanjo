@@ -14,7 +14,9 @@ class Expense < ApplicationRecord
   normalizes :description, with: ->(description) { description.strip }
 
   validates :description, presence: true, length: { maximum: 100 }
-  validates :amount, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: MAX_AMOUNT }
+  # presence gives an empty field its own message; numericality then skips nil (copy review F9).
+  validates :amount, presence: true
+  validates :amount, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: MAX_AMOUNT }, allow_nil: true
   validates :members, presence: true
   validate :payer_belongs_to_group, :members_belong_to_group
 

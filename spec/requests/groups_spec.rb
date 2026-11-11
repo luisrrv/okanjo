@@ -59,7 +59,7 @@ RSpec.describe "Groups", type: :request do
       get group_path(group)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("忘年会", "に削除されます", group_url(group))
+      expect(response.body).to include("忘年会", "に自動で削除されます", group_url(group))
     end
 
     it "uses the token in URLs, never the id" do

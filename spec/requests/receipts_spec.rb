@@ -11,10 +11,10 @@ RSpec.describe "Receipts", type: :request do
     get group_receipt_path(group)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("割り勘の明細", "飲み会", "発行日：", "印刷・PDFで保存")
-    expect(response.body).to include("割り勘：Benさん、Chieさん、Daiさん（1人 3,000円）")
+    expect(response.body).to include("割り勘の精算明細", "飲み会", "発行日：", "印刷／PDFで保存")
+    expect(response.body).to include("割り勘の対象：Benさん、Chieさん、Daiさん（1人あたり 3,000円）")
     expect(response.body).to include("合計", "32,000円")
-    expect(response.body).to include("Akiさんがまとめて精算します", "Chieさん → Akiさん")
+    expect(response.body).to include("Akiさんが代表して精算します", "Chieさん → Akiさん")
   end
 
   it "says there are no payments for an occasion without expenses" do
@@ -23,7 +23,7 @@ RSpec.describe "Receipts", type: :request do
 
     get group_receipt_path(group)
 
-    expect(response.body).to include("支払いはありません", "精算はありません")
+    expect(response.body).to include("支払いはありません", "精算する金額はありません")
   end
 
   it "is not found for an unknown occasion" do
@@ -37,6 +37,6 @@ RSpec.describe "Receipts", type: :request do
 
     get group_path(group)
 
-    expect(response.body).to include("明細を印刷", group_receipt_path(group))
+    expect(response.body).to include("精算明細を印刷", group_receipt_path(group))
   end
 end

@@ -8,7 +8,7 @@ RSpec.describe "Identities", type: :request do
 
       get group_path(group)
 
-      expect(response.body).to include("あなたの名前を選んでください")
+      expect(response.body).to include("ご自身の名前を選んでください")
     end
 
     it "adds an opened occasion to your recent list" do
@@ -31,7 +31,7 @@ RSpec.describe "Identities", type: :request do
       follow_redirect!
 
       expect(response.body).to include("あなた：Akiさん")
-      expect(response.body).not_to include("あなたの名前を選んでください")
+      expect(response.body).not_to include("ご自身の名前を選んでください")
     end
 
     it "is not found for a member of another occasion" do
@@ -51,7 +51,7 @@ RSpec.describe "Identities", type: :request do
       ben.destroy
       get group_path(group)
 
-      expect(response.body).to include("あなたの名前を選んでください")
+      expect(response.body).to include("ご自身の名前を選んでください")
     end
   end
 
@@ -63,7 +63,7 @@ RSpec.describe "Identities", type: :request do
 
       delete group_identity_path(group)
       follow_redirect!
-      expect(response.body).to include("あなたの名前を選んでください")
+      expect(response.body).to include("ご自身の名前を選んでください")
 
       get root_path
       expect(response.body).to include("忘年会")

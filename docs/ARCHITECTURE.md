@@ -74,7 +74,7 @@ erDiagram
   expenses {
     int group_id FK "on_delete: cascade"
     int payer_id FK "members; restrict"
-    string description "default お会計 N"
+    string description "default 支払い N"
     int amount "whole yen, 1 to 2,000,000,000"
   }
   participations {
@@ -135,7 +135,7 @@ sequenceDiagram
 
 ### Add an expense and settle up *(built)*
 
-1. Someone adds an expense: description (pre-filled お会計 N), amount, payer (defaults to
+1. Someone adds an expense: description (pre-filled 支払い N), amount, payer (defaults to
    this browser's member), and who's in the split (everyone by default). Leaving the payer
    out of the split asks for confirmation, stating the effect in yen (ADR 0015).
 2. **Everyone viewing the occasion sees it.** The expense touches the group, the group

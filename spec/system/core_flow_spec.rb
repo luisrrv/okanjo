@@ -24,14 +24,14 @@ RSpec.describe "Core flow", type: :system do
   it "splits a bill among everyone but the payer after confirmation" do
     start_night_out_and_open_expense_form
 
-    accept_confirm("Daiさんは割り勘に含まれません。Akiさん、Benさん、Chieさんで8,000円を割り勘し、1人2,667円になります。よろしいですか？") do
+    accept_confirm("Daiさんは割り勘の対象外です。8,000円をAkiさん、Benさん、Chieさんで分け、1人あたり2,667円になります。この内容でよろしいですか？") do
       uncheck "Dai"
     end
     click_on "保存する"
 
     expect(page).to have_content("支払いを追加しました")
-    expect(page).to have_content("1人 2,667円 × 3人")
-    expect(page).to have_content("支払い：Daiさん（割り勘の対象外）")
+    expect(page).to have_content("1人あたり 2,667円 × 3人")
+    expect(page).to have_content("支払った人：Daiさん（本人は割り勘の対象外）")
   end
 
   it "keeps the payer in the split when the confirmation is cancelled" do
@@ -41,7 +41,7 @@ RSpec.describe "Core flow", type: :system do
     expect(page).to have_checked_field("Dai")
     click_on "保存する"
 
-    expect(page).to have_content("1人 2,000円 × 4人")
-    expect(page).to have_content("支払い：Daiさん")
+    expect(page).to have_content("1人あたり 2,000円 × 4人")
+    expect(page).to have_content("支払った人：Daiさん")
   end
 end
