@@ -24,6 +24,9 @@ Option 2. Use Rails 8 defaults unless an ADR says otherwise. Adding a gem needs 
 
 ## Consequences
 - Infrastructure is the app server and SQLite. Solid Queue runs inside Puma (0017).
+- Removed from the defaults (2026-11-11): `image_processing` and the `libvips` system package
+  it drives. The app attaches no files and resizes no images, so they were unused; dropping
+  them removed four gems and about 110 MB from the production image.
 - Recorded deviations so far: RSpec and FactoryBot instead of Minitest and fixtures (0014),
   and the auth generator moving to phase 2 (0016).
 - Reaching for a 7.0 habit (Sidekiq, Devise, Sprockets, `require/permit`, Heroku or
