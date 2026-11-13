@@ -57,8 +57,8 @@ Option 1.
 - Phase 2 can serve the LIFF client from a path on the same domain (e.g. `/liff`), so it
   shares session cookies with the web app. To be settled in the phase 2 ADR.
 - The README presents the old LIFF app as the predecessor and links to its repo.
-- Follow-up once this ships: a Netlify `_redirects` rule in the old repo sending
-  warikan-jp.netlify.app to warikan.lrod.dev.
+- ~~Follow-up once this ships: a Netlify `_redirects` rule in the old repo sending
+  warikan-jp.netlify.app to warikan.lrod.dev.~~ Decided against (2026-11-13), see below.
 - ~~Open: the hosting provider, and paid versus free.~~ Decided below.
 
 ## Update (2026-11-02): hosting
@@ -101,6 +101,24 @@ cost of a fixed-price VPS.
     the server for the `ubuntu` user.
 - **A long first build can reset Kamal's idle SSH connection** to the server (about 9 minutes
   idle during a cold build). Re-running with cached layers succeeded in 58 seconds.
-- **Still open:** database backups for the SQLite volume, and the Netlify redirect from the
-  old app.
+- **Still open:** ~~database backups~~ (done, ADR 0020) ~~and the Netlify redirect~~ (decided
+  against, below).
+
+## Update (2026-11-13): no redirect from the old app
+The planned Netlify redirect from warikan-jp.netlify.app is dropped:
+- **The old app is still a working portfolio piece.** It's a LIFF calculator whose README
+  offers "Open in LINE" and a web preview. Redirecting it would remove the side-by-side
+  comparison that okanjo's README makes ("the same problem in two stacks").
+- **Its share flow posts `liff.line.me/<LIFF ID>` links into LINE chats.** A redirect would
+  send LINE users out of the LIFF app into a web app that has no LINE integration yet.
+- **LINE users move over in phase 2** by pointing the LINE app's endpoint at the new LIFF
+  front end, a setting in LINE Developers rather than a redirect.
+
+Instead, okanjo's README links the old app's LINE entry point and web preview, so both can be
+tried.
+
+**Naming:** both apps are called warikan. Until phase 2, okanjo's docs call them **warikan v1**
+(the LIFF calculator) and **warikan v2** (this repo); the old app itself is unchanged. Whether
+to rename v1 (e.g. "warikan lite") or retire its LIFF app is decided at phase 2, when both would
+appear inside LINE.
 

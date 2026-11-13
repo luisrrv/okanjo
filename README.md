@@ -5,11 +5,15 @@ share the link, add who paid for what, and the app tells everyone who pays whom.
 
 - **Live:** https://warikan.lrod.dev
 - **UI language:** Japanese. Code, docs and commit history are in English.
-- **okanjo** (お勘定, "the bill") is the codebase name. Users see it as **warikan**.
+- **okanjo** (お勘定, "the bill") is the codebase name. Users see it as **warikan**; this is
+  warikan v2.
 
 ## Why it exists
-I built [warikan](https://github.com/luisrrv/warikan) as a stateless LINE (LIFF) calculator.
-okanjo rebuilds the same problem as a Rails 8 Hotwire monolith with real persistence. It's
+I first built [warikan v1](https://github.com/luisrrv/warikan), a stateless LINE (LIFF)
+calculator. It's still live, so you can try both: [open v1 in LINE](https://liff.line.me/2009905533-DGtLYpEl)
+or use its [web preview](https://warikan-jp.netlify.app).
+This repo is warikan v2: the same problem rebuilt as a Rails 8 Hotwire monolith with real
+persistence. It's
 the same domain in two stacks, and it shows how I design a system and ship it with AI: I
 own the architecture and every decision, Claude Code implements from them, and the whole
 trail is in this repo.
