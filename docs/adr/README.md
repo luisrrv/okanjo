@@ -18,3 +18,4 @@
 - [0017. CI, and a Kamal deploy to warikan.lrod.dev](0017-ci-and-kamal-deploy-to-warikan-lrod-dev.md): Kamal to a Tokyo VPS; warikan is the product name, okanjo the codebase name
 - [0018. Japanese UI with Rails I18n and rails-i18n](0018-japanese-ui-with-rails-i18n.md): all copy in locale files; rails-i18n for Rails' own messages
 - [0019. Live refresh with Turbo page-refresh broadcasts](0019-live-refresh-with-turbo-broadcasts.md): Group broadcasts refreshes; other viewers' pages morph in place over Solid Cable
+- [0020. Back up the database with Litestream](0020-backups-with-litestream.md): stream the primary database to a private Oracle bucket every minute; keep 7 days
