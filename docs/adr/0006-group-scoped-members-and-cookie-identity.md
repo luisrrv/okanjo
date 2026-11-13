@@ -27,3 +27,7 @@ cookie recording, for each occasion token, which member this browser is.
 - A signed cookie can't be tampered with but isn't encrypted. It holds occasion tokens,
   which the browser already has from the URL.
 - How a browser picks or claims its member is a UI decision for the spec.
+
+## Update (2026-11-13): accounts
+With slice 2a (0022), a signed-in user's member in an occasion comes from `members.user_id`
+first, then this cookie. Signed-out visitors are unchanged.

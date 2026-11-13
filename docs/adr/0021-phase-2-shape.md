@@ -77,3 +77,19 @@ API backend for a separate client, and general API skills, not only Rails ones.
   v2. Until 2c ships, docs keep calling them v1 and v2.
 - **The LINE app's endpoint in LINE Developers changes to `warikan.lrod.dev/liff`** when 2c
   ships. That's a console setting, done by Luis.
+
+## Update (2026-11-13): what 2c has to show
+The aim of phase 2 is to show a LINE front end added to an existing Rails product without
+disturbing it. A company considering LINE already has users with email accounts, so two
+things become 2c requirements:
+- **Linking LINE to an existing account.** A user who signed up with email can link LINE, and
+  both sign-ins reach the same `User`. 2c's ADR covers the hard cases: someone who already
+  has two accounts, unlinking, and which data survives a merge, if merging is allowed at all.
+  LINE-only accounts are still supported.
+- **The core barely changes.** 2c's diff should stay mostly in `app/controllers/api/`, the
+  API views and `liff/`, plus the migration for LINE identities. 2c's ADR records which
+  core files changed and why. That's the evidence that the integration is additive.
+
+After 2c, a short `docs/` write-up, "Adding LINE to an existing Rails app", generalises what
+2c did: the LINE channel setup, verifying the ID token on the server, account linking, the
+LINE in-app browser's limits, and what the core didn't need.

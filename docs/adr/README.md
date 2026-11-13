@@ -20,3 +20,4 @@
 - [0019. Live refresh with Turbo page-refresh broadcasts](0019-live-refresh-with-turbo-broadcasts.md): Group broadcasts refreshes; other viewers' pages morph in place over Solid Cable
 - [0020. Back up the database with Litestream](0020-backups-with-litestream.md): stream the primary database to a private Oracle bucket every minute; keep 7 days
 - [0021. Phase 2: accounts, an external-grade API, and v1 as the LINE front end](0021-phase-2-shape.md): slices 2a → 2b → 2c; v1's client moves in as liff/; bearer-token, versioned API
+- [0022. Optional accounts with the Rails 8 auth generator (slice 2a)](0022-optional-accounts-with-the-auth-generator.md): login stays optional; Oracle Email Delivery for resets; claim a member by choosing it; bcrypt
