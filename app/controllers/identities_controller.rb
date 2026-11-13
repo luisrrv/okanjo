@@ -1,5 +1,6 @@
 # "I'm this member" for this browser, stored in the signed cookie (ADR 0006).
 class IdentitiesController < ApplicationController
+  allow_unauthenticated_access # occasions never need an account (ADR 0022)
   include GroupScoped
   include CurrentMember
 

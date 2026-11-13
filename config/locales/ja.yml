@@ -13,6 +13,7 @@ ja:
       member: メンバー
       expense: 支払い
       participation: 割り勘メンバー
+      user: アカウント
     attributes:
       group:
         name: イベント名
@@ -28,6 +29,10 @@ ja:
         members: 割り勘の対象メンバー
       participation:
         member: メンバー
+      user:
+        email_address: メールアドレス
+        password: パスワード
+        password_confirmation: パスワード（確認）
     errors:
       models:
         member:
@@ -158,3 +163,54 @@ ja:
       settlement: 精算
       empty: 支払いはありません
       footer: 割り勘（%{url}）で作成
+
+  # Accounts (ADR 0022, docs/specs/accounts.md)
+  rate_limited: しばらくしてからもう一度お試しください
+
+  layouts:
+    application:
+      sign_in: ログイン
+      sign_out: ログアウト
+
+  sessions:
+    new:
+      title: ログイン
+      email: メールアドレス
+      password: パスワード
+      submit: ログイン
+      forgot: パスワードを忘れた場合
+      sign_up: アカウントを作成
+    create:
+      invalid: メールアドレスかパスワードが正しくありません
+
+  registrations:
+    new:
+      title: アカウント作成
+      note: アカウントがなくても割り勘は使えます。ログインすると、どの端末からでも自分の割り勘を開けます。
+      submit: 作成する
+      sign_in: アカウントをお持ちの方はログイン
+    create:
+      created: アカウントを作成しました
+
+  passwords:
+    invalid_token: リンクが無効か、有効期限が切れています
+    new:
+      title: パスワードの再設定
+      note: 登録したメールアドレスに、再設定用のリンクを送ります。
+      email: メールアドレス
+      submit: 送信する
+    create:
+      sent: メールアドレスが登録されていれば、再設定用のリンクを送りました。
+    edit:
+      title: 新しいパスワード
+      password: 新しいパスワード
+      password_confirmation: 新しいパスワード（確認）
+      submit: 変更する
+    update:
+      updated: パスワードを変更しました。ログインしてください。
+
+  passwords_mailer:
+    reset:
+      subject: 【割り勘】パスワードの再設定
+      body: 下のリンクからパスワードを再設定してください。リンクの有効期限は%{expires_in}です。
+      ignore: 心当たりがない場合は、このメールを無視してください。

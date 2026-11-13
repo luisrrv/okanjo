@@ -1,6 +1,11 @@
 Rails.application.routes.draw do
   root "groups#new"
 
+  # Accounts are optional (ADR 0022). The generator adds sessions and passwords; sign-up is ours.
+  resource :session
+  resources :passwords, param: :token
+  resource :registration, only: %i[new create]
+
   # Always nested under the token, never shallow: ids are guessable, tokens aren't.
   resources :groups, only: %i[create show], param: :token do
     resources :members, only: %i[create destroy]

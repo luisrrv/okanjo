@@ -1,6 +1,6 @@
 # Spec: optional accounts and "my occasions" (slice 2a)
 
-- Status: Draft
+- Status: In progress (step 1 done)
 - ADRs: 0006, 0016, 0021, 0022
 
 ## Goal
@@ -34,7 +34,10 @@ as it does today.
   A request spec visits every core page signed out to catch a missed one.
 - **Action Cable:** `ApplicationCable::Connection` sets `current_user` when there's a valid
   session cookie and accepts the connection either way.
-- **`params.expect`, not `params.permit`,** in the generated controllers (CLAUDE.md).
+- **`params.expect` for sign-up** (`user: [...]`, a model form). Sign-in and the reset form
+  keep the generator's `params.permit(:email_address, :password)`: those are top-level scalar
+  fields with no root key, and `permit` already drops anything that isn't a scalar. `expect`
+  earns its place on nested hashes, where a malformed shape should be a 400 rather than a 500.
 - **Japanese copy** for every generated message (`t(".…")`, see Copy), including the rate-limit
   alerts and the reset email.
 - **Sign-out** (`terminate_session`) also clears the members cookie, so the next person on a
@@ -122,6 +125,7 @@ should review these before deploy.
 | `registrations.new.note` | アカウントがなくても割り勘は使えます。ログインすると、どの端末からでも自分の割り勘を開けます。 | You can use warikan without an account. Logging in lets you open your occasions from any device. |
 | `registrations.new.password_confirmation` | パスワード（確認） | Password (again) |
 | `registrations.new.submit` | 作成する | Create |
+| `registrations.new.sign_in` | アカウントをお持ちの方はログイン | Already have an account? Log in |
 | `registrations.create.created` | アカウントを作成しました | Account created |
 | `passwords.new.title` | パスワードの再設定 | Reset your password |
 | `passwords.new.note` | 登録したメールアドレスに、再設定用のリンクを送ります。 | We'll send a reset link to your registered email address. |
@@ -130,7 +134,7 @@ should review these before deploy.
 | `passwords.edit.title` | 新しいパスワード | New password |
 | `passwords.edit.submit` | 変更する | Change |
 | `passwords.update.updated` | パスワードを変更しました。ログインしてください。 | Password changed. Please log in. |
-| `passwords.update.mismatch` | パスワードが一致しません | The passwords don't match |
+| (validation messages) | rails-i18n, e.g. パスワード（確認）とパスワードの入力が一致しません | Password (again) doesn't match Password |
 | `passwords.invalid_token` | リンクが無効か、有効期限が切れています | The link is invalid or has expired |
 | `passwords_mailer.reset.subject` | 【割り勘】パスワードの再設定 | [warikan] Reset your password |
 | `passwords_mailer.reset.body` | 下のリンクからパスワードを再設定してください。リンクの有効期限は%{expires_in}です。 | Reset your password with the link below. It expires in %{expires_in}. |

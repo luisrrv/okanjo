@@ -1,4 +1,5 @@
 class MembersController < ApplicationController
+  allow_unauthenticated_access # occasions never need an account (ADR 0022)
   include GroupScoped
   include CurrentMember
 

@@ -1,4 +1,5 @@
 class GroupsController < ApplicationController
+  allow_unauthenticated_access # occasions never need an account (ADR 0022)
   include CurrentMember
 
   rate_limit to: 10, within: 1.minute, only: :create
