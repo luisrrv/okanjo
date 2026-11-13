@@ -1,0 +1,15 @@
+<% if groups.any? %>
+  <section class="mt-8">
+    <h2 class="mb-2 text-sm font-bold text-stone-500"><%= heading %></h2>
+    <ul class="divide-y divide-stone-200 rounded-lg bg-white shadow-sm">
+      <% groups.each do |group| %>
+        <li>
+          <%= link_to group, class: "flex justify-between px-4 py-3" do %>
+            <span><%= group_title(group) %></span>
+            <span class="text-sm text-stone-500"><%= t("groups.new.members_count", count: group.members.size) %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

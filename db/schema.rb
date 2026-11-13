@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_081433) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_082442) do
   create_table "expenses", force: :cascade do |t|
     t.integer "group_id", null: false
     t.integer "payer_id", null: false
@@ -35,7 +35,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_081433) do
     t.string "name", null: false, collation: "NOCASE"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
     t.index ["group_id", "name"], name: "index_members_on_group_id_and_name", unique: true
+    t.index ["user_id", "group_id"], name: "index_members_on_user_id_and_group_id", unique: true
   end
 
   create_table "participations", force: :cascade do |t|
@@ -67,6 +69,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_081433) do
   add_foreign_key "expenses", "groups", on_delete: :cascade
   add_foreign_key "expenses", "members", column: "payer_id"
   add_foreign_key "members", "groups", on_delete: :cascade
+  add_foreign_key "members", "users", on_delete: :nullify
   add_foreign_key "participations", "expenses", on_delete: :cascade
   add_foreign_key "participations", "members"
   add_foreign_key "sessions", "users"

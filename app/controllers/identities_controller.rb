@@ -6,8 +6,11 @@ class IdentitiesController < ApplicationController
 
   def create
     member = @group.members.find(params.expect(:member_id))
-    remember_member(member)
-    redirect_to @group, notice: t(".created", name: member.name)
+    if remember_member(member)
+      redirect_to @group, notice: t(".created", name: member.name)
+    else
+      redirect_to @group, alert: member.errors.full_messages.to_sentence
+    end
   end
 
   def destroy

@@ -1,6 +1,6 @@
 # Spec: optional accounts and "my occasions" (slice 2a)
 
-- Status: In progress (step 1 done)
+- Status: In progress (steps 1–2 done)
 - ADRs: 0006, 0016, 0021, 0022
 
 ## Goal
@@ -22,7 +22,8 @@ as it does today.
 - **`sessions`** (generator): `user_id`, `ip_address`, `user_agent`.
 - **`members.user_id`:** nullable, a foreign key with `on_delete: :nullify`, and a unique
   index on `[group_id, user_id]`. `belongs_to :user, optional: true`, plus a uniqueness
-  validation scoped to `group_id` that allows nil.
+  validation scoped to `group_id` that allows nil. Built as `[user_id, group_id]`: the same
+  rule, and with `user_id` first the index also serves "this user's occasions".
 - **Claiming lives on `Member`:** `claim_by(user)` returns false if another user already
   holds the member or the user already has another member in this occasion, and `release_by(user)`
   only works for the user who holds it.
@@ -141,7 +142,8 @@ should review these before deploy.
 | `passwords_mailer.reset.ignore` | 心当たりがない場合は、このメールを無視してください。 | If you didn't ask for this, ignore this email. |
 | `groups.new.mine` | 自分の割り勘 | My occasions |
 | `identities.banner.claimed` | 連携済み | Linked |
-| `identities.create.claimed_by_other` | %{name}さんは別のアカウントと連携済みです | %{name} is linked to another account |
+| `activerecord.errors.models.member.claimed_by_other` | このメンバーは別のアカウントと連携済みです | This member is linked to another account |
+| `…member.attributes.user_id.taken` | アカウントはこのイベントの別のメンバーと連携済みです | Your account is already linked to another member in this occasion |
 
 `%{expires_in}` comes from `distance_of_time_in_words` with rails-i18n, i.e. 15分.
 

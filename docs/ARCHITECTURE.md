@@ -61,6 +61,8 @@ erDiagram
   members ||--o{ expenses : "paid (payer_id)"
   expenses ||--|{ participations : "split among"
   members ||--o{ participations : "is in"
+  users |o--o{ members : "claims (optional)"
+  users ||--o{ sessions : has
 
   groups {
     string token UK "has_secure_token; in the URL"
@@ -70,6 +72,14 @@ erDiagram
   members {
     int group_id FK "on_delete: cascade"
     string name "NOCASE; unique per group"
+    int user_id FK "nullable; on_delete: nullify; unique with group_id"
+  }
+  users {
+    string email_address UK "normalized; never shown to others"
+    string password_digest "has_secure_password"
+  }
+  sessions {
+    int user_id FK "one per signed-in browser"
   }
   expenses {
     int group_id FK "on_delete: cascade"
@@ -94,6 +104,9 @@ erDiagram
 - **Last change.** Members, expenses and split entries `touch` their parent, so
   `groups.updated_at` moves forward on any edit. That includes removing someone from a
   split, which needs `dependent: :destroy` on the `has_many :through`.
+- **Accounts are optional (ADR 0022).** A user claims at most one member per occasion. A
+  claim is for listing your occasions on any device, not for access: the link still opens
+  the occasion for anyone. Occasions are still deleted 30 days after the last change.
 
 ### Where the logic lives (ADR 0009)
 
@@ -199,13 +212,16 @@ A member who paid for something or is in a split can't be deleted on their own
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,
   and system specs in headless Chrome. `bin/ci` runs the same checks locally (ADR 0014).
 
-## Phase 2 *(planned, after the core ships)*
+## Phase 2 *(in progress, ADR 0021)*
 
-1. The Rails 8 auth generator (email + password, sessions) and a nullable
-   `Member.user_id`.
-2. A JSON API next to the HTML app.
-3. A small LIFF client, likely served from a path on the same domain so it shares session
-   cookies.
-4. LINE Login as a second strategy on the same `User`, reusing the generator's session code.
+Three slices, each shippable on its own:
+1. **2a, accounts (ADR 0022):** the Rails 8 auth generator with login kept optional, sign-up,
+   claiming members (`members.user_id`), 自分の割り勘 on the home page, and password-reset
+   email through Oracle Email Delivery. Steps 1–2 built; email and deploy pending.
+2. **2b, the API:** `/api/v1`, designed as if its client were external: bearer tokens, not
+   cookies; explicit response shapes; error codes; contract tests.
+3. **2c, LINE:** warikan v1 moves in as `liff/`, served at `/liff` and calling the API, with LINE
+   Login as a second sign-in on the same `User`, including linking LINE to an existing
+   email account.
 
-This needs its own ADR first. The core keeps running on its own (ADR 0016, 0017).
+The core keeps running on its own (ADR 0016, 0017).

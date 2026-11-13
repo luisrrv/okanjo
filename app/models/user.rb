@@ -1,6 +1,9 @@
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
+  # The database also nullifies (on_delete: :nullify); this keeps it right in Ruby too.
+  has_many :members, dependent: :nullify
+  has_many :groups, through: :members
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 

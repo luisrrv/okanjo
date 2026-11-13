@@ -7,7 +7,7 @@ class GroupsController < ApplicationController
   def new
     @group = Group.new
     @group.members.build
-    @recent_groups = recent_groups
+    load_home_lists
   end
 
   def create
@@ -17,7 +17,7 @@ class GroupsController < ApplicationController
       remember_member(@group.members.first)
       redirect_to @group, notice: t(".created")
     else
-      @recent_groups = recent_groups
+      load_home_lists
       render :new, status: :unprocessable_content
     end
   end
@@ -29,6 +29,12 @@ class GroupsController < ApplicationController
   end
 
   private
+    # Signed in: your account's occasions first, then this browser's others (ADR 0022).
+    def load_home_lists
+      @my_groups = authenticated? ? Current.user.groups.order(updated_at: :desc).includes(:members).to_a : []
+      @recent_groups = recent_groups - @my_groups
+    end
+
     def group_params
       params.expect(group: [ :name, members_attributes: [ [ :name ] ] ])
     end

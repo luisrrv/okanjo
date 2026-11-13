@@ -22,6 +22,7 @@ ja:
         name: あなたの名前
       member:
         name: 名前
+        user_id: アカウント
       expense:
         description: 内容
         amount: 金額
@@ -40,9 +41,12 @@ ja:
           # would show the raw association name ("participations").
           restrict_dependent_destroy:
             has_many: このメンバーは支払いまたは割り勘の対象に含まれているため、削除できません
+          claimed_by_other: このメンバーは別のアカウントと連携済みです
           attributes:
             name:
               taken: が同じメンバーがすでにいます
+            user_id:
+              taken: はこのイベントの別のメンバーと連携済みです
         expense:
           attributes:
             # These are a select and checkboxes, so "choose" (選択), not "enter" (入力).
@@ -68,6 +72,7 @@ ja:
       name_placeholder: 例：忘年会、箱根旅行
       your_name_label: あなたの名前
       submit: 作成する
+      mine: 自分の割り勘
       recent: 最近開いたイベント
       members_count: "%{count}人"
     create:
@@ -97,6 +102,7 @@ ja:
       title: ご自身の名前を選んでください
       not_listed: 名前がない場合は追加してください
       add_me: 追加
+      claimed: 連携済み
     create:
       created: "%{name}さんとして表示しています"
 

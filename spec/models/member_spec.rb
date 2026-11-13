@@ -85,4 +85,80 @@ RSpec.describe Member, type: :model do
       expect(group.reload.updated_at).to be > 1.minute.ago
     end
   end
+
+  describe "#claim_by" do
+    it "links an unlinked member to the account" do
+      member = create(:member)
+      user = create(:user)
+
+      expect(member.claim_by(user)).to be(true)
+      expect(member.reload.user).to eq(user)
+    end
+
+    it "is fine to claim your own member again" do
+      user = create(:user)
+      member = create(:member, user: user)
+
+      expect(member.claim_by(user)).to be(true)
+    end
+
+    it "refuses a member another account holds" do
+      member = create(:member, user: create(:user))
+
+      expect(member.claim_by(create(:user))).to be(false)
+      expect(member.errors.full_messages).to eq([ "このメンバーは別のアカウントと連携済みです" ])
+    end
+
+    it "refuses a second member for the same account in one occasion" do
+      user = create(:user)
+      group = create(:group)
+      create(:member, group: group, user: user)
+      other = create(:member, group: group)
+
+      expect(other.claim_by(user)).to be(false)
+      expect(other.errors.full_messages).to eq([ "アカウントはこのイベントの別のメンバーと連携済みです" ])
+    end
+
+    it "lets one account have a member in each of several occasions" do
+      user = create(:user)
+
+      expect([ create(:member), create(:member) ].map { |member| member.claim_by(user) }).to eq([ true, true ])
+    end
+  end
+
+  describe "#release_by" do
+    it "unlinks the member for the account holding it" do
+      user = create(:user)
+      member = create(:member, user: user)
+
+      member.release_by(user)
+
+      expect(member.reload.user).to be_nil
+    end
+
+    it "does nothing for any other account" do
+      holder = create(:user)
+      member = create(:member, user: holder)
+
+      expect(member.release_by(create(:user))).to be(false)
+      expect(member.reload.user).to eq(holder)
+    end
+  end
+
+  it "is unlinked, not deleted, when its account is deleted" do
+    member = create(:member, user: create(:user))
+
+    member.user.destroy
+
+    expect(member.reload.user).to be_nil
+  end
+
+  it "has a database guarantee of one member per account in each occasion" do
+    user = create(:user)
+    group = create(:group)
+    create(:member, group: group, user: user)
+    other = create(:member, group: group)
+
+    expect { other.update_column(:user_id, user.id) }.to raise_error(ActiveRecord::RecordNotUnique)
+  end
 end

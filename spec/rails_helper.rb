@@ -23,7 +23,7 @@ require 'rspec/rails'
 # directory. Alternatively, in the individual `*_spec.rb` files, manually
 # require only the support files necessary.
 #
-# Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
+Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
 # Ensures that the test database schema matches the current schema file.
 # If there are pending migrations it will invoke `db:test:prepare` to
@@ -81,6 +81,12 @@ RSpec.configure do |config|
 
   # Same driver Rails' generated system tests used: headless Chrome, so it runs in CI.
   config.before(:each, type: :system) do
-    driven_by :selenium, using: :headless_chrome
+    # Chrome's password manager flags "password" as leaked and opens a dialog that swallows
+    # later clicks, so specs after a login would fail at random. Turn it off.
+    driven_by :selenium, using: :headless_chrome do |options|
+      options.add_preference("credentials_enable_service", false)
+      options.add_preference("profile.password_manager_enabled", false)
+      options.add_preference("profile.password_manager_leak_detection", false)
+    end
   end
 end
