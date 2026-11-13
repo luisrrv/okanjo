@@ -2,13 +2,13 @@
 service: okanjo
 
 # Name of the container image (use your-user/app-name on external registries).
-image: okanjo
+image: luisrrv/okanjo
 
 # Deploy to these servers.
 servers:
   web:
-    # Placeholder until the server exists: the Oracle (or Sakura) public IP (ADR 0017).
-    - 192.168.0.1
+    # Oracle Cloud Always Free, ARM, Osaka (ADR 0017).
+    - 161.33.45.239
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -26,16 +26,14 @@ proxy:
   host: warikan.lrod.dev
 
 # Where you keep your container images.
+# GitHub Container Registry, not Kamal's local registry: pulling ~500 MB through the
+# local registry's SSH tunnel failed twice in net-ssh on macOS (ADR 0017 update).
 registry:
-  # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: localhost:5555
-
-  # Needed for authenticated registries.
-  # username: your-user
-
-  # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
+  server: ghcr.io
+  username: luisrrv
+  # A classic GitHub token with write:packages, read from the macOS keychain (.kamal/secrets).
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:

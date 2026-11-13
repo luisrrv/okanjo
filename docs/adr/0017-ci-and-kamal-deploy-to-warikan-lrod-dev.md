@@ -82,3 +82,25 @@ cost of a fixed-price VPS.
   tiers (their disks are wiped on deploy, which loses SQLite).
 - Buying the server and adding the Gandi DNS record are done by Luis; Claude prepares the
   Kamal configuration and runs deploys with his OK.
+
+## Update (2026-11-13): first deploy, and the registry
+- **Capacity:** Oracle's free ARM shape was "out of host capacity" in Osaka for several days
+  of retries. Upgrading the account to pay-as-you-go (Always Free resources stay free, with
+  a 0円 budget alert) got a server on the first apply.
+- **Registry: GitHub Container Registry, not Kamal's local registry.** With the local
+  registry, the server pulls the image back through an SSH tunnel run by `net-ssh` on the
+  Mac. Pulling about 500 MB of layers in parallel through it failed twice, inside `net-ssh`'s
+  socket writes (`IOError: closed stream`, then `Errno::ERANGE`). The tunnel itself worked in
+  isolation, so it broke under load. `ghcr.io/luisrrv/okanjo` removes the tunnel: the server
+  pulls over HTTPS.
+  - The image is public. The repo is public and the image holds no secrets:
+    `RAILS_MASTER_KEY` is only given to the container at start, and the credentials file
+    inside it is encrypted.
+  - Kamal authenticates with a classic GitHub token (`write:packages` only, 90-day expiry),
+    read from the macOS keychain by `.kamal/secrets`. It is also stored by `docker login` on
+    the server for the `ubuntu` user.
+- **A long first build can reset Kamal's idle SSH connection** to the server (about 9 minutes
+  idle during a cold build). Re-running with cached layers succeeded in 58 seconds.
+- **Still open:** database backups for the SQLite volume, and the Netlify redirect from the
+  old app.
+

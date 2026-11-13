@@ -3,7 +3,7 @@
 Split the bill for one occasion (a 飲み会, a trip) without signing up. Create an occasion,
 share the link, add who paid for what, and the app tells everyone who pays whom.
 
-- **Live:** https://warikan.lrod.dev (deploy in progress)
+- **Live:** https://warikan.lrod.dev
 - **UI language:** Japanese. Code, docs and commit history are in English.
 - **okanjo** (お勘定, "the bill") is the codebase name. Users see it as **warikan**.
 

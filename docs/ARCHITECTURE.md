@@ -4,7 +4,7 @@ okanjo is a shared-expense splitting app for single occasions (a 飲み会, a tr
 it as **warikan (割り勘)** at `warikan.lrod.dev`; okanjo is the codebase name (ADR 0017).
 Decisions are recorded in [`docs/adr/`](adr/README.md), and this document summarises them.
 
-**Status (2026-11-04):** everything in the core is built and tested except the deploy:
+**Status (2026-11-13):** the core is built, tested and **live at https://warikan.lrod.dev**:
 the domain model, the core flow, balances, settlement, live refresh, the printable receipt
 and the purge job. Everything marked *planned* is designed but not implemented yet.
 
@@ -14,7 +14,7 @@ and the purge job. Everything marked *planned* is designed but not implemented y
 | Routes, controllers and forms (session 2) | built |
 | Balance sheet, settlement, live refresh (session 3) | built |
 | Printable receipt, purge job (session 4) | built |
-| Deploy (session 4) | planned: waiting for a server |
+| Deploy (session 4) | live since 2026-11-13 |
 | Phase 2: auth generator, JSON API, LIFF client, LINE Login | planned, after the core ships |
 
 ## System context
@@ -179,15 +179,16 @@ A member who paid for something or is in a split can't be deleted on their own
 
 ## Deployment and CI
 
-- **Deploy *(planned)*:** Kamal 2 to a server in Japan, free tier first: Oracle Cloud
-  Always Free (ARM, Osaka), with Sakura VPS Ishikari 1 GB (880円/month) as the fallback
-  (ADR 0017, hosting update). kamal-proxy gets Let's Encrypt certificates. `.dev` is
-  HTTPS-only, so TLS is on from the first deploy. Kamal's local registry pushes the image
-  over SSH.
-- **Status:** the Oracle network (`okanjo-vcn`, public subnet) exists, but creating the
-  free ARM server fails with "out of capacity" in Osaka. Retrying; if it keeps failing,
-  either upgrade the account to pay-as-you-go (staying within the free limits) or use the
-  Sakura fallback.
+- **Deploy *(live)*:** Kamal 2 to Oracle Cloud Always Free (ARM: 1 OCPU, 6 GB, Osaka), on an
+  account upgraded to pay-as-you-go to get capacity, with a 0円 budget alert (ADR 0017).
+  `bin/kamal deploy` builds the image natively on the Mac, pushes it to GitHub Container
+  Registry (`ghcr.io/luisrrv/okanjo`), and the server pulls it. kamal-proxy terminates TLS
+  with a Let's Encrypt certificate and redirects HTTP to HTTPS; HSTS is on.
+- **Server:** Ubuntu 24.04, Docker from Ubuntu's own package, ports 80/443 opened in both
+  the VCN security list and the server's iptables. Kamal connects as `ubuntu` with a
+  dedicated SSH key. The registry token lives in the macOS keychain.
+- **Footprint at launch:** the app container uses about 270 MB and kamal-proxy about 8 MB,
+  1.0 GB of the server's 5.8 GB in total. A cached deploy takes about a minute.
 - **Database:** SQLite files in `storage/` on a Docker volume, with separate databases for
   primary data, the cache and the queue.
 - **Seeds:** the night-out demo, for development and test only. `db:prepare` would

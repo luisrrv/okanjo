@@ -1,6 +1,6 @@
 # Spec: receipt, purge job, README, deploy (session 4)
 
-- Status: Draft
+- Status: Implemented (2026-11-13); live at https://warikan.lrod.dev
 - ADRs: 0012, 0016, 0017 (hosting update), 0018
 - Depends on: [settlement](settlement.md)
 
