@@ -1,0 +1,26 @@
+# Litestream 0.5 configuration (ADR 0020). Production only: the Puma plugin starts it when
+# LITESTREAM_IN_PUMA is set (config/deploy.yml). Keys come from the environment
+# (.kamal/secrets reads them from the macOS keychain). https://litestream.io/reference/config/
+
+# Keep 7 days, not longer: occasions are deleted 30 days after the last change (ADR 0016),
+# and long-lived backups would keep purged occasions around.
+snapshot:
+  interval: 24h
+  retention: 168h
+
+dbs:
+  # Only the primary database. Cache, queue and cable hold nothing that can't be rebuilt.
+  - path: storage/production.sqlite3
+    replica:
+      type: s3
+      bucket: okanjo-backups
+      path: production
+      # Oracle Object Storage's S3-compatible API in Osaka; the namespace isn't a secret.
+      endpoint: https://axt1yffhec2o.compat.objectstorage.ap-osaka-1.oraclecloud.com
+      region: ap-osaka-1
+      force-path-style: true
+      # Upload once a minute instead of every second: at most ~43,000 uploads a month,
+      # under Oracle's 50,000 free requests. About a minute of changes is at risk.
+      sync-interval: 1m
+      access-key-id: $LITESTREAM_ACCESS_KEY_ID
+      secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
