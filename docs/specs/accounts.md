@@ -1,6 +1,6 @@
 # Spec: optional accounts and "my occasions" (slice 2a)
 
-- Status: In progress (steps 1–2 done)
+- Status: In progress (steps 1–3 built; deploy pending)
 - ADRs: 0006, 0016, 0021, 0022
 
 ## Goal
@@ -85,10 +85,18 @@ as it does today.
    keychain with the `pbpaste` method, as `okanjo-smtp-username` and `okanjo-smtp-password`.
 5. **Check:** the sending limit for the account, and the SMTP endpoint for Osaka.
 
+**Done (2026-11-13):** domain `warikan.lrod.dev` active; DKIM selector `warikan-osaka-20261113`
+active; SPF and DMARC published at Gandi; approved sender `no-reply@warikan.lrod.dev`; SMTP
+credentials (generated under My profile → Saved passwords) in the keychain. Endpoint
+`smtp.email.ap-osaka-1.oci.oraclecloud.com`, port 587, TLS required. A test sent from a Mac with
+these settings reached a Gmail inbox, signed by `warikan.lrod.dev` (DKIM) over TLS.
+
 **Claude implements:**
 - Production `smtp_settings` from the endpoint (port 587, STARTTLS) and the two credentials,
   read by `.kamal/secrets` and passed in `env.secret`.
 - `default_url_options` host `warikan.lrod.dev`; the sender `割り勘 <no-reply@warikan.lrod.dev>`.
+- `raise_delivery_errors = true`: mail goes out in a job, so a failed send becomes a failed job
+  in the logs.
 - Development keeps Rails' default: the email isn't delivered, but its full text (and the reset
   link) is in the log. A mailer preview shows the reset email.
 
@@ -100,6 +108,9 @@ as it does today.
   already has a member there): sign-in succeeds and that entry stays cookie-only.
 - **A claimed member is removed from the occasion:** allowed under the existing rule (no
   expenses, no splits); the claim goes with it.
+- **Claiming counts as a change to the occasion** (Luis, 2026-11-13): `touch: true` moves the
+  deletion date and sends other viewers a refresh, so their 連携済み badge appears. A claim
+  edits a member, and someone claiming is using the occasion.
 - **The occasion is purged:** its members go with it, so it disappears from 自分の割り勘.
 - **Password reset for an unknown address:** the same message as for a known one (the
   generator's behaviour), so it doesn't reveal who has an account.
@@ -164,3 +175,10 @@ should review these before deploy.
    it's not in spam, and that DKIM passes in the message headers), reset, sign in.
 5. **Live refresh signed in and signed out,** on the deployed app: the WebSocket connects
    for both.
+
+## Follow-ups
+- **Custom Return Path:** Oracle's return path (`kix1.rp.oracleemaildelivery.com`) means SPF passes
+  for Oracle's domain, not ours. DMARC passes through DKIM, so delivery isn't affected. A custom
+  return path would align SPF as well.
+- **A dedicated Oracle user for SMTP,** as Oracle recommends, instead of Luis's own user. The
+  credentials only allow sending mail.
