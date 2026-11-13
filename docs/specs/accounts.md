@@ -1,6 +1,6 @@
 # Spec: optional accounts and "my occasions" (slice 2a)
 
-- Status: In progress (steps 1–3 built; deploy pending)
+- Status: Implemented (2026-11-13); live at https://warikan.lrod.dev
 - ADRs: 0006, 0016, 0021, 0022
 
 ## Goal
@@ -175,6 +175,13 @@ should review these before deploy.
    it's not in spam, and that DKIM passes in the message headers), reset, sign in.
 5. **Live refresh signed in and signed out,** on the deployed app: the WebSocket connects
    for both.
+
+## Verified in production (2026-11-13)
+Luis ran verification steps 3–5 on the live site: sign-up, claiming his member in an existing
+occasion, 自分の割り勘 after logging out and back in, a reset email to Gmail and a new password,
+and live refresh while signed out. The logs for that hour show no 4xx or 5xx responses, one
+`MailDeliveryJob` performed, and six WebSocket connections (four identified as the user, two
+signed out) with none rejected. The migration kept the existing occasion and its members.
 
 ## Follow-ups
 - **Custom Return Path:** Oracle's return path (`kix1.rp.oracleemaildelivery.com`) means SPF passes

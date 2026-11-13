@@ -212,12 +212,12 @@ A member who paid for something or is in a split can't be deleted on their own
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,
   and system specs in headless Chrome. `bin/ci` runs the same checks locally (ADR 0014).
 
-## Phase 2 *(in progress, ADR 0021)*
+## Phase 2 *(in progress, ADR 0021: 2a live)*
 
 Three slices, each shippable on its own:
 1. **2a, accounts (ADR 0022):** the Rails 8 auth generator with login kept optional, sign-up,
    claiming members (`members.user_id`), 自分の割り勘 on the home page, and password-reset
-   email through Oracle Email Delivery. Steps 1–2 built; email and deploy pending.
+   email through Oracle Email Delivery. Live since 2026-11-13.
 2. **2b, the API:** `/api/v1`, designed as if its client were external: bearer tokens, not
    cookies; explicit response shapes; error codes; contract tests.
 3. **2c, LINE:** warikan v1 moves in as `liff/`, served at `/liff` and calling the API, with LINE
