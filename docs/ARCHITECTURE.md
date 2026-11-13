@@ -191,6 +191,9 @@ A member who paid for something or is in a split can't be deleted on their own
   1.0 GB of the server's 5.8 GB in total. A cached deploy takes about a minute.
 - **Database:** SQLite files in `storage/` on a Docker volume, with separate databases for
   primary data, the cache and the queue.
+- **Backups:** Litestream, running inside Puma, streams the primary database to a private
+  Oracle Object Storage bucket every minute and keeps 7 days (ADR 0020). A restore drill
+  on 2026-11-13 matched the live database; the runbook is in `docs/specs/backups.md`.
 - **Seeds:** the night-out demo, for development and test only. `db:prepare` would
   otherwise seed a fresh production database.
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,

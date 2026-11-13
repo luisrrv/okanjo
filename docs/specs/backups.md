@@ -1,6 +1,6 @@
 # Spec: database backups with Litestream
 
-- Status: Draft
+- Status: Implemented (2026-11-13)
 - ADRs: 0016, 0017, 0020
 
 ## Goal
@@ -61,15 +61,31 @@ backups older than 7 days are deleted, and a restore has been done once and chec
    confirm the free 50,000 requests a month are not at risk.
 4. `bundle exec rspec`, `bin/rubocop`, `bin/brakeman`.
 
-## How to restore for real (written into the README or a runbook)
-1. `bin/kamal app stop`.
-2. Restore over `storage/production.sqlite3` with `bin/rails litestream:restore`, through
-   `bin/kamal app exec`.
-3. `bin/kamal app boot`.
-4. Check `/up` and an occasion page.
+## How to restore for real
 
-The exact commands get filled in from the restore drill, so they're commands that have
-actually run.
+**Tested (2026-11-13), the restore drill:** restoring the latest backup into a separate file
+inside the running container, then comparing it with the live database:
+
+```bash
+bin/kamal app exec --reuse 'bash -c "bundle exec litestream restore -config config/litestream.yml -o /tmp/restore-drill.sqlite3 storage/production.sqlite3 && sqlite3 /tmp/restore-drill.sqlite3 \"PRAGMA integrity_check\""'
+```
+
+The restored copy matched the live database row for row, including a change made about a
+minute before the restore, which shows ongoing changes are backed up, not just the daily
+snapshot.
+
+**Restoring over the live database** (not run, since it means stopping production; steps 1
+and 3 are standard Kamal commands, step 2 uses the tested restore command with the live
+path):
+1. `bin/kamal app stop`: the app stops, and the volume and its files stay.
+2. Keep the broken file, then restore in a one-off container (same image, environment and
+   volume):
+   ```bash
+   bin/kamal app exec 'bash -c "mv storage/production.sqlite3 storage/production.sqlite3.broken && rm -f storage/production.sqlite3-wal storage/production.sqlite3-shm && bundle exec litestream restore -config config/litestream.yml -o storage/production.sqlite3 storage/production.sqlite3"'
+   ```
+   Moving the old file aside first means the restore never writes over data, and the broken
+   copy is kept for investigation. Delete it once the restored database is confirmed.
+3. `bin/kamal app boot`, then check `/up` and an occasion page.
 
 ## Follow-ups
 - Alert if replication stops, e.g. a recurring job that checks the last upload time.
