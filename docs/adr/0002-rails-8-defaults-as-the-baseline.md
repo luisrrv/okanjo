@@ -27,6 +27,11 @@ Option 2. Use Rails 8 defaults unless an ADR says otherwise. Adding a gem needs 
 - Removed from the defaults (2026-11-11): `image_processing` and the `libvips` system package
   it drives. The app attaches no files and resizes no images, so they were unused; dropping
   them removed four gems and about 110 MB from the production image.
+- Not loaded (2026-11-16): Active Storage, and Action Text and Action Mailbox, which depend
+  on it. `config/application.rb` requires each framework instead of `rails/all`, as
+  `rails new --skip-active-storage` would. Without `image_processing`, Active Storage printed
+  a warning on every boot; the app stores no files, so the frameworks were dead weight. Their
+  gems stay in the lockfile because the `rails` gem depends on them.
 - Recorded deviations so far: RSpec and FactoryBot instead of Minitest and fixtures (0014),
   and the auth generator moving to phase 2 (0016).
 - Reaching for a 7.0 habit (Sidekiq, Devise, Sprockets, `require/permit`, Heroku or
