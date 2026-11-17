@@ -81,8 +81,9 @@ controllers keep using `params.expect`.
 - `POST /members`: `{"name": "Aki", "claim": true}`
 - `POST /expenses` and `PATCH /expenses/:id`:
   `{"description": "1次会", "amount": 20000, "payer_id": 1, "member_ids": [1, 2, 3]}`.
-  `PATCH` accepts any subset. `amount` is an integer number of yen; a string or a decimal is a
-  `422`, never rounded.
+  `PATCH` accepts any subset. `amount` is an integer number of yen. A decimal is a `422`, never
+  rounded; a whole number sent as a string (`"3000"`) is accepted as that exact integer, as Rails
+  casts it.
 
 ## Responses
 Field names are the API's, not the schema's: `occasion` (not group), `token`, `payer_id`,
@@ -201,7 +202,7 @@ clear it before each example.
   splits); the claim goes with it.
 - **`payer_id` or `member_ids` from another occasion:** `422`, from the existing validations.
 - **`member_ids` empty:** `422` (`members` presence).
-- **`amount` as `"3000"`, `3000.5` or above `Expense::MAX_AMOUNT`:** `422`.
+- **`amount` as `3000.5` or above `Expense::MAX_AMOUNT`:** `422`. As `"3000"`: accepted, exactly.
 - **Two requests claim the same member at once:** the unique index decides; the loser gets
   `409 claimed_by_other` or `already_claimed_here`, never a `500` (`Member#claim_by`).
 - **`If-None-Match` after another user changed the occasion:** `200` with the new ETag.

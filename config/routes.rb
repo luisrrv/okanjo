@@ -22,7 +22,12 @@ Rails.application.routes.draw do
       namespace :me do
         resources :occasions, only: :index
       end
-      resources :occasions, only: %i[create show], param: :token
+      resources :occasions, only: %i[create show], param: :token do
+        resources :members, only: %i[create destroy] do
+          resource :claim, only: %i[update destroy]
+        end
+        resources :expenses, only: %i[create update destroy]
+      end
     end
   end
 
