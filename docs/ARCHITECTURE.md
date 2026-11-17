@@ -15,7 +15,9 @@ and the purge job. Everything marked *planned* is designed but not implemented y
 | Balance sheet, settlement, live refresh (session 3) | built |
 | Printable receipt, purge job (session 4) | built |
 | Deploy (session 4) | live since 2026-11-13 |
-| Phase 2: auth generator, JSON API, LIFF client, LINE Login | planned, after the core ships |
+| Phase 2a: optional accounts (ADR 0022) | live since 2026-11-13 |
+| Phase 2b: JSON API at `/api/v1` (ADR 0023) | built; not yet deployed |
+| Phase 2c: LIFF client, LINE Login | planned |
 
 ## System context
 
@@ -46,7 +48,7 @@ flowchart LR
   Propshaft, importmap) keep the whole app in one container backed by SQLite files on a
   Docker volume (ADR 0002, 0017).
 - **Server-rendered HTML.** ERB views with Turbo and Stimulus. No JSON API in the core
-  (ADR 0003).
+  (ADR 0003); phase 2 adds one beside it, with its own controllers (see [The API](#the-api-built)).
 - **Live refresh.** Every change to an occasion broadcasts a Turbo page refresh over Action
   Cable (Solid Cable in production), and other viewers' pages morph in place (ADR 0019).
 - **No login in the core.** An occasion's URL token is its only access control. A signed
@@ -180,6 +182,52 @@ the balances and the transfers, laid out for paper. A Stimulus `print` controlle
 `window.print()`, Tailwind `print:` variants hide the app's header and buttons, and the
 browser's "Save as PDF" produces the file, with no PDF gem (ADR 0016).
 
+### The API *(built)*
+
+A JSON API at `/api/v1` for clients other than the website, starting with the LIFF client in
+2c (ADR 0021, 0023). It's documented in [`docs/api/openapi.yaml`](api/openapi.yaml), and the
+request specs in `spec/requests/api/v1/` pin every response shape.
+
+```mermaid
+sequenceDiagram
+  actor Client as API client (curl, LIFF in 2c)
+  participant API as Api::V1 controllers
+  participant DB as SQLite
+  Client->>API: POST /api/v1/session (email, password)
+  API->>DB: INSERT session
+  API-->>Client: 201 token = session.signed_id(purpose: :api), 30 days
+  Client->>API: GET /api/v1/occasions/:token (Bearer token)
+  API->>DB: Session.find_signed(token, purpose: :api)
+  API-->>Client: 200 occasion + balances + settlement, ETag
+  Client->>API: same GET, If-None-Match: ETag
+  API-->>Client: 304 Not Modified (nothing loaded)
+  Client->>API: POST /api/v1/occasions/:token/expenses
+  API->>DB: INSERT expense (touches the group)
+  API-->>Client: 201 expense
+  Note over API,DB: The group's touch also broadcasts a Turbo refresh,<br/>so website viewers see the change live
+  Client->>API: DELETE /api/v1/session
+  API->>DB: DELETE session (the token stops working)
+```
+
+- **Who can call it:** every endpoint except sign-in needs `Authorization: Bearer <token>`.
+  An occasion's token in the URL still grants access to that occasion, as on the website;
+  the account says who you are, not which occasions you may open (ADR 0005, 0022).
+- **The token** is the session's `signed_id` with `purpose: :api`. Nothing secret is stored,
+  so a copy of the database (Litestream's included) holds no usable tokens. Destroying the
+  session cancels it, and a password reset destroys every session.
+- **Its own controllers:** `Api::V1::BaseController < ActionController::API`, so no cookies,
+  CSRF or browser checks. The website's controllers, views and routes didn't change; the
+  rules live on the models (`Member#claim_by`) and in `BalanceSheet` and `Settlement`, which
+  both front ends use.
+- **The product's words:** `occasions`, not `groups`, and explicit jbuilder shapes, never
+  `render json: model`.
+- **Errors** are RFC 9457 problem details: a stable `code` for clients, a Japanese `detail`
+  for users, and per-field `errors` under the API's field names.
+- **Rate limits** use Rails 8's `rate_limit`, per user and shared across the API, with
+  `Retry-After` on a 429.
+- **No push updates for API clients.** They poll the occasion with `If-None-Match`, which
+  costs a 304 when nothing changed.
+
 ### Two deletion routes
 
 | Route | Used by | How children go | Callbacks |
@@ -212,14 +260,15 @@ A member who paid for something or is in a split can't be deleted on their own
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,
   and system specs in headless Chrome. `bin/ci` runs the same checks locally (ADR 0014).
 
-## Phase 2 *(in progress, ADR 0021: 2a live)*
+## Phase 2 *(in progress, ADR 0021: 2a live, 2b built)*
 
 Three slices, each shippable on its own:
 1. **2a, accounts (ADR 0022):** the Rails 8 auth generator with login kept optional, sign-up,
    claiming members (`members.user_id`), 自分の割り勘 on the home page, and password-reset
    email through Oracle Email Delivery. Live since 2026-11-13.
-2. **2b, the API:** `/api/v1`, designed as if its client were external: bearer tokens, not
-   cookies; explicit response shapes; error codes; contract tests.
+2. **2b, the API (ADR 0023):** `/api/v1`, designed as if its client were external: bearer
+   tokens, not cookies; explicit response shapes; error codes; contract tests. Built; see
+   [The API](#the-api-built).
 3. **2c, LINE:** warikan v1 moves in as `liff/`, served at `/liff` and calling the API, with LINE
    Login as a second sign-in on the same `User`, including linking LINE to an existing
    email account.
