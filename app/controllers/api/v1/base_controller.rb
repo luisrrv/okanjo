@@ -42,6 +42,16 @@ class Api::V1::BaseController < ActionController::API
       render_problem :rate_limited, status: :too_many_requests
     end
 
+    # A 422 listing each field's errors by code and Japanese message. fields maps model
+    # attributes to the API's field names, e.g. { "members.name": :member_name }.
+    def render_validation_failed(record, fields: {})
+      errors = record.errors.group_by_attribute.to_h do |attribute, attribute_errors|
+        [ fields.fetch(attribute, attribute).to_s,
+          attribute_errors.map { |error| { code: error.type.to_s, message: error.full_message } } ]
+      end
+      render_problem :validation_failed, status: :unprocessable_content, errors:
+    end
+
     # formats: :json because a body that fails to parse also loses the route's format default.
     def render_problem(code, status:, errors: nil)
       render "api/v1/problems/show", formats: :json, status:, content_type: "application/problem+json",
