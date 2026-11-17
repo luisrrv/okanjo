@@ -22,7 +22,7 @@ trail is in this repo.
 - **Core (live):** occasions, expenses, settlement, receipts and the 30-day purge, with CI,
   a Kamal deploy and Litestream backups.
 - **Phase 2, slice 2a (live):** optional accounts.
-- **Phase 2, slice 2b (built):** a versioned JSON API (`/api/v1`) designed as if its client
+- **Phase 2, slice 2b (live):** a versioned JSON API (`/api/v1`) designed as if its client
   were external. See [Try the API](#try-the-api).
 - **Next:** 2c, which moves warikan v1 into this repo as the LINE front end on that API, with
   LINE Login. After 2c there is one warikan. See [ADR 0021](docs/adr/0021-phase-2-shape.md).
