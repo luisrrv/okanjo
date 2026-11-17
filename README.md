@@ -22,8 +22,9 @@ trail is in this repo.
 - **Core (live):** occasions, expenses, settlement, receipts and the 30-day purge, with CI,
   a Kamal deploy and Litestream backups.
 - **Phase 2, slice 2a (live):** optional accounts.
-- **Next:** 2b, a versioned JSON API (`/api/v1`) designed as if its client were external;
-  then 2c, which moves warikan v1 into this repo as the LINE front end on that API, with
+- **Phase 2, slice 2b (built):** a versioned JSON API (`/api/v1`) designed as if its client
+  were external. See [Try the API](#try-the-api).
+- **Next:** 2c, which moves warikan v1 into this repo as the LINE front end on that API, with
   LINE Login. After 2c there is one warikan. See [ADR 0021](docs/adr/0021-phase-2-shape.md).
 
 ## What it does
@@ -43,6 +44,8 @@ trail is in this repo.
 - **Live updates** for everyone viewing an occasion, without wiping what you're typing.
 - **A printable receipt,** saved as a PDF from the browser.
 - **Occasions are deleted 30 days after the last change** by a daily background job.
+- **A JSON API** (`/api/v1`) that can do everything the website does with an occasion:
+  bearer tokens, RFC 9457 errors, ETags, and an [OpenAPI description](docs/api/openapi.yaml).
 
 ## Design decisions
 Every decision is recorded as an ADR in [`docs/adr/`](docs/adr/README.md), with the options
@@ -59,6 +62,7 @@ considered and their trade-offs. The system is summarised in
 | [0019](docs/adr/0019-live-refresh-with-turbo-broadcasts.md) | Live refresh with Turbo page-refresh broadcasts and morphing |
 | [0021](docs/adr/0021-phase-2-shape.md) | Phase 2 in three slices: accounts, an external-grade API, then v1 as the LINE front end |
 | [0022](docs/adr/0022-optional-accounts-with-the-auth-generator.md) | Optional accounts with the Rails 8 auth generator |
+| [0023](docs/adr/0023-api-v1-for-slice-2b.md) | The API: a signed session id as the bearer token (and why not JWT), one aggregate read, problem details |
 
 The feature specs written before each session are in [`docs/specs/`](docs/specs/).
 
@@ -83,6 +87,42 @@ bin/dev          # http://localhost:3000, with Tailwind rebuilding on change
 bundle exec rspec
 bin/ci           # everything CI runs: RuboCop, security audits, specs
 ```
+
+## Try the API
+Every endpoint is in [`docs/api/openapi.yaml`](docs/api/openapi.yaml). With `bin/dev` running,
+create an account at http://localhost:3000/registration/new, then (with `jq` installed):
+
+```bash
+API=http://localhost:3000/api/v1
+
+# Sign in: the token is valid for 30 days, or until you sign out
+TOKEN=$(curl -s $API/session -H 'Content-Type: application/json' \
+  -d '{"email_address":"you@example.com","password":"your-password"}' | jq -r .token)
+AUTH="Authorization: Bearer $TOKEN"
+
+# Create an occasion; you're its first member
+OCCASION=$(curl -s $API/occasions -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"飲み会","member_name":"Aki"}' | jq -r .token)
+AKI=$(curl -s $API/occasions/$OCCASION -H "$AUTH" | jq .my_member_id)
+BEN=$(curl -s $API/occasions/$OCCASION/members -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Ben"}' | jq .id)
+
+# ¥1,001 split two ways: ¥501 each, and Aki keeps the odd yen
+curl -s $API/occasions/$OCCASION/expenses -H "$AUTH" -H 'Content-Type: application/json' \
+  -d "{\"description\":\"1次会\",\"amount\":1001,\"payer_id\":$AKI,\"member_ids\":[$AKI,$BEN]}"
+
+# The whole occasion: balances and who pays whom, worked out on the server
+curl -s -D - $API/occasions/$OCCASION -H "$AUTH"
+
+# Ask again with the ETag from that response: 304, nothing loaded
+curl -s -o /dev/null -w '%{http_code}\n' $API/occasions/$OCCASION -H "$AUTH" -H 'If-None-Match: <ETag>'
+
+# Sign out: the token stops working
+curl -s -X DELETE $API/session -H "$AUTH"
+```
+
+The occasion is also on the website at `http://localhost:3000/groups/$OCCASION`, and a page
+open there refreshes when the API changes it.
 
 ## How it was built
 The design came first, then one feature at a time, each following the same workflow:

@@ -1,0 +1,503 @@
+openapi: 3.1.0
+info:
+  title: warikan API
+  version: "1"
+  summary: Split the bill for one occasion.
+  description: |
+    The JSON API of warikan (割り勘), the bill-splitting app at https://warikan.lrod.dev.
+    Designed as if its client were external (ADR 0021, 0023): bearer tokens, explicit
+    response shapes, RFC 9457 problem details. Written by hand; the request specs in
+    `spec/requests/api/v1/` pin the same shapes.
+
+    - **Amounts** are integers in yen. Shares round up, and the payer keeps the odd yen
+      (ADR 0008). Every computed amount comes from the server; clients never recompute money.
+    - **Times** are ISO 8601 with the offset (Japan time). **Dates** are `YYYY-MM-DD`.
+    - **Access:** every endpoint except `POST /session` needs a bearer token. An occasion's
+      token in the URL is what grants access to that occasion; an account doesn't restrict
+      which occasions you can open (ADR 0005, 0022).
+    - **Rate limits:** sign-in 10 per 3 minutes per IP; creating occasions 10 per minute;
+      adding members and expenses 30 per minute; 300 requests per minute per user overall.
+      Over a limit: `429` with `Retry-After`.
+    - **Messages:** `detail` in errors is Japanese, for showing to users. `code` is stable,
+      for clients to branch on.
+servers:
+  - url: https://warikan.lrod.dev/api/v1
+security:
+  - bearer: []
+
+paths:
+  /session:
+    post:
+      operationId: signIn
+      summary: Sign in with an email account and get a token
+      description: The token is valid for 30 days, or until `DELETE /session` or a password reset.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email_address, password]
+              properties:
+                email_address: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "201":
+          description: Signed in.
+          headers:
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          description: Wrong email or password (`invalid_credentials`). Doesn't say which.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+    delete:
+      operationId: signOut
+      summary: Cancel the current token
+      responses:
+        "204": { description: Signed out. The token no longer works. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /me:
+    get:
+      operationId: getMe
+      summary: The user the token belongs to
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /me/occasions:
+    get:
+      operationId: listMyOccasions
+      summary: Occasions where your account holds a member
+      description: Most recently changed first. Purged occasions drop out.
+      responses:
+        "200":
+          description: Your occasions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [occasions]
+                properties:
+                  occasions:
+                    type: array
+                    items: { $ref: "#/components/schemas/OccasionSummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /occasions:
+    post:
+      operationId: createOccasion
+      summary: Create an occasion with its first member, claimed by you
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [member_name]
+              properties:
+                name: { type: [string, "null"], maxLength: 50, examples: [飲み会] }
+                member_name: { type: string, maxLength: 50, description: Your name in this occasion. }
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Occasion" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /occasions/{token}:
+    parameters:
+      - $ref: "#/components/parameters/OccasionToken"
+    get:
+      operationId: getOccasion
+      summary: The whole occasion, with shares, balances and the settlement
+      description: |
+        Supports conditional GET: send the last `ETag` as `If-None-Match` and get `304` when
+        nothing changed. The ETag differs per user, since `my_member_id` and `mine` do.
+        Clients poll this; there are no push updates for API clients.
+      parameters:
+        - in: header
+          name: If-None-Match
+          schema: { type: string }
+      responses:
+        "200":
+          description: The occasion.
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Occasion" }
+        "304": { description: Not modified since the ETag sent. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /occasions/{token}/members:
+    parameters:
+      - $ref: "#/components/parameters/OccasionToken"
+    post:
+      operationId: addMember
+      summary: Add a member, optionally claimed by you
+      description: With `claim`, if the member can't be yours, it isn't created either.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 50, description: Unique in the occasion, ignoring case. }
+                claim: { type: boolean, default: false }
+      responses:
+        "201":
+          description: Added.
+          headers:
+            Location: { $ref: "#/components/headers/OccasionLocation" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /occasions/{token}/members/{id}:
+    parameters:
+      - $ref: "#/components/parameters/OccasionToken"
+      - $ref: "#/components/parameters/Id"
+    delete:
+      operationId: removeMember
+      summary: Remove a member who hasn't paid for anything and isn't in any split
+      responses:
+        "204": { description: Removed. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /occasions/{token}/members/{id}/claim:
+    parameters:
+      - $ref: "#/components/parameters/OccasionToken"
+      - $ref: "#/components/parameters/Id"
+    put:
+      operationId: claimMember
+      summary: Link a member to your account
+      description: |
+        A claim puts the occasion in `/me/occasions`. It doesn't lock the member: anyone with
+        the link can still act as any member (ADR 0022). Claiming your own member again is a
+        no-op `200`.
+      responses:
+        "200":
+          description: The member is yours.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      operationId: releaseMember
+      summary: Unlink your member
+      description: "`404` if the member isn't yours, so it doesn't reveal who holds it."
+      responses:
+        "204": { description: Released. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /occasions/{token}/expenses:
+    parameters:
+      - $ref: "#/components/parameters/OccasionToken"
+    post:
+      operationId: addExpense
+      summary: Add an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/ExpenseInput"
+                - required: [description, amount, payer_id, member_ids]
+      responses:
+        "201":
+          description: Added.
+          headers:
+            Location: { $ref: "#/components/headers/OccasionLocation" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Expense" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /occasions/{token}/expenses/{id}:
+    parameters:
+      - $ref: "#/components/parameters/OccasionToken"
+      - $ref: "#/components/parameters/Id"
+    patch:
+      operationId: updateExpense
+      summary: Change any of an expense's fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpenseInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Expense" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      operationId: deleteExpense
+      summary: Delete an expense
+      responses:
+        "204": { description: Deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: |
+        The token from `POST /session`, sent as `Authorization: Bearer <token>` (RFC 6750).
+        It's a signed session id: opaque to clients, cancelled by `DELETE /session` or a
+        password reset. A missing or bad token gets `401` with
+        `WWW-Authenticate: Bearer realm="warikan"` (plus `error="invalid_token"` if one was sent).
+
+  parameters:
+    OccasionToken:
+      in: path
+      name: token
+      required: true
+      description: The occasion's token, the same one as in its website URL.
+      schema: { type: string }
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer }
+
+  headers:
+    Location:
+      description: The URL of the created resource.
+      schema: { type: string, format: uri }
+    OccasionLocation:
+      description: The occasion's URL. Members and expenses are read through their occasion.
+      schema: { type: string, format: uri }
+
+  responses:
+    BadRequest:
+      description: Malformed JSON or a missing required field (`bad_request`).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Unauthorized:
+      description: Missing, invalid, expired or cancelled token (`unauthorized`).
+      headers:
+        WWW-Authenticate: { schema: { type: string } }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Unknown occasion token, or a member or expense not in that occasion (`not_found`).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Conflict:
+      description: |
+        `claimed_by_other`: another account holds the member.
+        `already_claimed_here`: your account already has a member in this occasion.
+        `member_in_use`: the member paid for something or is in a split.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationFailed:
+      description: Validation errors, per field (`validation_failed`).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+          example:
+            type: https://warikan.lrod.dev/api/problems/validation_failed
+            title: Validation failed
+            status: 422
+            detail: 入力内容を確認してください
+            code: validation_failed
+            errors:
+              amount:
+                - { code: greater_than, message: 金額は1円以上で入力してください }
+    RateLimited:
+      description: Over a rate limit (`rate_limited`).
+      headers:
+        Retry-After:
+          description: Seconds to wait.
+          schema: { type: integer }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+    Problem:
+      description: RFC 9457 problem details. `title` is for developers, `detail` for users.
+      type: object
+      required: [type, title, status, detail, code]
+      properties:
+        type: { type: string, format: uri, description: "Not served as a page; identifies the code." }
+        title: { type: string, examples: [Validation failed] }
+        status: { type: integer }
+        detail: { type: string, description: Japanese, for users. }
+        code:
+          type: string
+          enum: [bad_request, unauthorized, invalid_credentials, not_found, claimed_by_other,
+                 already_claimed_here, member_in_use, validation_failed, rate_limited]
+        errors:
+          description: Only for `validation_failed`. Keyed by the API's field names.
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: object
+              required: [code, message]
+              properties:
+                code: { type: string, examples: [blank, too_long, taken, not_an_integer] }
+                message: { type: string, description: Japanese. }
+
+    User:
+      type: object
+      required: [id, email_address]
+      properties:
+        id: { type: integer }
+        email_address: { type: string, format: email }
+
+    Session:
+      type: object
+      required: [token, expires_at, user]
+      properties:
+        token: { type: string, description: Opaque. Send as a bearer token. }
+        expires_at: { type: string, format: date-time }
+        user: { $ref: "#/components/schemas/User" }
+
+    OccasionSummary:
+      type: object
+      required: [token, name, my_member_id, member_count, deletion_date, updated_at]
+      properties:
+        token: { type: string }
+        name: { type: [string, "null"] }
+        my_member_id: { type: integer }
+        member_count: { type: integer }
+        deletion_date: { type: string, format: date, description: Deleted on this date unless something changes (ADR 0016). }
+        updated_at: { type: string, format: date-time }
+
+    Occasion:
+      type: object
+      required: [token, name, deletion_date, updated_at, my_member_id, members, expenses, balances, settlement]
+      properties:
+        token: { type: string }
+        name: { type: [string, "null"] }
+        deletion_date: { type: string, format: date }
+        updated_at: { type: string, format: date-time }
+        my_member_id: { type: [integer, "null"], description: Your claimed member, if any. }
+        members:
+          type: array
+          description: In the order they joined.
+          items: { $ref: "#/components/schemas/Member" }
+        expenses:
+          type: array
+          description: Newest first.
+          items: { $ref: "#/components/schemas/Expense" }
+        balances:
+          type: array
+          description: One per member, in member order. Balances sum to zero.
+          items: { $ref: "#/components/schemas/Balance" }
+        settlement: { $ref: "#/components/schemas/Settlement" }
+
+    Member:
+      type: object
+      required: [id, name, claimed, mine, removable]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        claimed: { type: boolean, description: Some account holds this member. }
+        mine: { type: boolean, description: Your account holds this member. }
+        removable: { type: boolean, description: Not a payer and not in any split. }
+
+    ExpenseInput:
+      type: object
+      properties:
+        description: { type: string, maxLength: 100 }
+        amount:
+          type: integer
+          minimum: 1
+          maximum: 2000000000
+          description: Yen. A decimal is rejected, never rounded.
+        payer_id: { type: integer, description: A member of this occasion. }
+        member_ids:
+          type: array
+          minItems: 1
+          items: { type: integer }
+          description: Who's in the split. The payer doesn't have to be (ADR 0015).
+
+    Expense:
+      type: object
+      required: [id, description, amount, payer_id, member_ids, share_amount, collected, odd_yen, created_at]
+      properties:
+        id: { type: integer }
+        description: { type: string }
+        amount: { type: integer }
+        payer_id: { type: integer }
+        member_ids: { type: array, items: { type: integer } }
+        share_amount: { type: integer, description: "amount ÷ number in the split, rounded up." }
+        collected: { type: integer, description: share_amount × number in the split. The payer is credited with this. }
+        odd_yen: { type: integer, description: collected − amount, kept by the payer. }
+        created_at: { type: string, format: date-time }
+
+    Balance:
+      type: object
+      required: [member_id, credited, owed, balance]
+      properties:
+        member_id: { type: integer }
+        credited: { type: integer, description: What the member fronted, as collected. }
+        owed: { type: integer, description: The member's shares. }
+        balance: { type: integer, description: credited − owed. Positive means owed money. }
+
+    Settlement:
+      type: object
+      description: Who pays whom, all through one collector (ADR 0013).
+      required: [collector_id, transfers]
+      properties:
+        collector_id: { type: [integer, "null"], description: Null when every balance is zero. }
+        transfers:
+          type: array
+          items:
+            type: object
+            required: [from_id, to_id, amount]
+            properties:
+              from_id: { type: integer }
+              to_id: { type: integer }
+              amount: { type: integer }

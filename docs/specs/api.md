@@ -1,6 +1,6 @@
 # Spec: the JSON API, v1 (slice 2b)
 
-- Status: Draft (2026-11-17)
+- Status: Implemented (2026-11-17); not yet deployed
 - ADRs: 0005, 0006, 0008, 0013, 0021, 0022, 0023
 
 ## Goal
@@ -153,7 +153,7 @@ user), and an API version string, so a change to the response shape invalidates 
   "status": 422,
   "detail": "入力内容を確認してください",
   "code": "validation_failed",
-  "errors": { "amount": [ { "code": "greater_than", "message": "金額は0より大きい値にしてください" } ] } }
+  "errors": { "amount": [ { "code": "greater_than", "message": "金額は1円以上で入力してください" } ] } }
 ```
 - `title` is for developers and stays in English; `detail` is for users and is Japanese, from
   `config/locales/ja.yml`.
