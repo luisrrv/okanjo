@@ -4,9 +4,9 @@ okanjo is a shared-expense splitting app for single occasions (a 飲み会, a tr
 it as **warikan (割り勘)** at `warikan.lrod.dev`; okanjo is the codebase name (ADR 0017).
 Decisions are recorded in [`docs/adr/`](adr/README.md), and this document summarises them.
 
-**Status (2026-11-13):** the core is built, tested and **live at https://warikan.lrod.dev**:
+**Status (2026-11-17):** the core is built, tested and **live at https://warikan.lrod.dev**:
 the domain model, the core flow, balances, settlement, live refresh, the printable receipt
-and the purge job. Everything marked *planned* is designed but not implemented yet.
+and the purge job. Phase 2's optional accounts (2a) and JSON API (2b) are live too. Everything marked *planned* is designed but not implemented yet.
 
 | Area | Status |
 |---|---|
@@ -16,7 +16,7 @@ and the purge job. Everything marked *planned* is designed but not implemented y
 | Printable receipt, purge job (session 4) | built |
 | Deploy (session 4) | live since 2026-11-13 |
 | Phase 2a: optional accounts (ADR 0022) | live since 2026-11-13 |
-| Phase 2b: JSON API at `/api/v1` (ADR 0023) | built; not yet deployed |
+| Phase 2b: JSON API at `/api/v1` (ADR 0023) | live since 2026-11-17 |
 | Phase 2c: LIFF client, LINE Login | planned |
 
 ## System context
@@ -48,7 +48,7 @@ flowchart LR
   Propshaft, importmap) keep the whole app in one container backed by SQLite files on a
   Docker volume (ADR 0002, 0017).
 - **Server-rendered HTML.** ERB views with Turbo and Stimulus. No JSON API in the core
-  (ADR 0003); phase 2 adds one beside it, with its own controllers (see [The API](#the-api-built)).
+  (ADR 0003); phase 2 adds one beside it, with its own controllers (see [The API](#the-api-live)).
 - **Live refresh.** Every change to an occasion broadcasts a Turbo page refresh over Action
   Cable (Solid Cable in production), and other viewers' pages morph in place (ADR 0019).
 - **No login in the core.** An occasion's URL token is its only access control. A signed
@@ -182,7 +182,7 @@ the balances and the transfers, laid out for paper. A Stimulus `print` controlle
 `window.print()`, Tailwind `print:` variants hide the app's header and buttons, and the
 browser's "Save as PDF" produces the file, with no PDF gem (ADR 0016).
 
-### The API *(built)*
+### The API *(live)*
 
 A JSON API at `/api/v1` for clients other than the website, starting with the LIFF client in
 2c (ADR 0021, 0023). It's documented in [`docs/api/openapi.yaml`](api/openapi.yaml), and the
@@ -260,15 +260,15 @@ A member who paid for something or is in a split can't be deleted on their own
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,
   and system specs in headless Chrome. `bin/ci` runs the same checks locally (ADR 0014).
 
-## Phase 2 *(in progress, ADR 0021: 2a live, 2b built)*
+## Phase 2 *(in progress, ADR 0021: 2a and 2b live)*
 
 Three slices, each shippable on its own:
 1. **2a, accounts (ADR 0022):** the Rails 8 auth generator with login kept optional, sign-up,
    claiming members (`members.user_id`), 自分の割り勘 on the home page, and password-reset
    email through Oracle Email Delivery. Live since 2026-11-13.
 2. **2b, the API (ADR 0023):** `/api/v1`, designed as if its client were external: bearer
-   tokens, not cookies; explicit response shapes; error codes; contract tests. Built; see
-   [The API](#the-api-built).
+   tokens, not cookies; explicit response shapes; error codes; contract tests. Live since 2026-11-17; see
+   [The API](#the-api-live).
 3. **2c, LINE:** warikan v1 moves in as `liff/`, served at `/liff` and calling the API, with LINE
    Login as a second sign-in on the same `User`, including linking LINE to an existing
    email account.

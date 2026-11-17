@@ -1,6 +1,6 @@
 # Spec: the JSON API, v1 (slice 2b)
 
-- Status: Implemented (2026-11-17); not yet deployed
+- Status: Implemented (2026-11-17); live at https://warikan.lrod.dev/api/v1
 - ADRs: 0005, 0006, 0008, 0013, 0021, 0022, 0023
 
 ## Goal
@@ -245,3 +245,21 @@ Japanese `detail` messages. Glosses in English; a native speaker should check th
 4. **In production after step 4,** with `curl`: sign in, create an occasion, add members and an
    expense, read it, repeat the read with `If-None-Match` for a `304`, check the occasion on the
    website, then `DELETE /session` and see the token rejected.
+
+## Verified in production (2026-11-17)
+Deployed as `f4e1c31`. Before signing in: `/up` and the website returned 200, and
+`GET /api/v1/me` without a token returned `401` with `application/problem+json` and
+`WWW-Authenticate: Bearer realm="warikan"`.
+
+Luis then ran the README walkthrough against production with his own account: sign-in, `/me`,
+creating an occasion, adding Ben, a ¥1,001 expense (`share_amount` 501, `collected` 1,002,
+`odd_yen` 1), the occasion's balances and settlement (Ben pays Aki ¥501), `200` then `304` with
+`If-None-Match`, the occasion on the website and under 自分の割り勘, live refresh on the website
+when the API deleted the expense, removing a member (`204`) and an unknown member (`404`
+problem), and sign-out (`204`, then `401` with the old token).
+
+The logs for that window show every API request answered with the expected status (`200`,
+`201`, `204`, `304`, `401`, `404`), no `5xx` responses or exceptions, and the Turbo refresh
+broadcasts from API writes. The only other non-2xx was a `406` on the website's home page for a
+client that isn't a modern browser (`allow_browser`), which is existing behaviour.
+
