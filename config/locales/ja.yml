@@ -229,4 +229,7 @@ ja:
       invalid_credentials: メールアドレスかパスワードが正しくありません
       not_found: 見つかりませんでした
       validation_failed: 入力内容を確認してください
+      claimed_by_other: このメンバーは別のアカウントと連携済みです
+      already_claimed_here: アカウントはこのイベントの別のメンバーと連携済みです
+      member_in_use: 支払いに関わっているメンバーは削除できません
       rate_limited: しばらくしてからもう一度お試しください
