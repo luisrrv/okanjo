@@ -14,6 +14,14 @@ Rails.application.routes.draw do
     resource :receipt, only: :show
   end
 
+  # The JSON API (ADR 0023): bearer tokens, its own controllers, the product's words.
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      resource :session, only: %i[create destroy]
+      resource :me, only: :show, controller: :me
+    end
+  end
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

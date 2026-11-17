@@ -220,3 +220,12 @@ ja:
       subject: 【割り勘】パスワードの再設定
       body: 下のリンクからパスワードを再設定してください。リンクの有効期限は%{expires_in}です。
       ignore: 心当たりがない場合は、このメールを無視してください。
+
+  # The JSON API's problem details (ADR 0023, docs/specs/api.md)
+  api:
+    errors:
+      bad_request: リクエストの形式が正しくありません
+      unauthorized: ログインが必要です
+      invalid_credentials: メールアドレスかパスワードが正しくありません
+      not_found: 見つかりませんでした
+      rate_limited: しばらくしてからもう一度お試しください
