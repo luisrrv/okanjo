@@ -21,3 +21,4 @@
 - [0020. Back up the database with Litestream](0020-backups-with-litestream.md): stream the primary database to a private Oracle bucket every minute; keep 7 days
 - [0021. Phase 2: accounts, an external-grade API, and v1 as the LINE front end](0021-phase-2-shape.md): slices 2a → 2b → 2c; v1's client moves in as liff/; bearer-token, versioned API
 - [0022. Optional accounts with the Rails 8 auth generator (slice 2a)](0022-optional-accounts-with-the-auth-generator.md): login stays optional; Oracle Email Delivery for resets; claim a member by choosing it; bcrypt
+- [0023. The JSON API for slice 2b: bearer sessions, occasions, problem details](0023-api-v1-for-slice-2b.md): bearer token required; a signed Session id as the token; `/api/v1/occasions`; one aggregate read with an ETag; RFC 9457 errors; hand-written OpenAPI
