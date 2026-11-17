@@ -19,6 +19,10 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :session, only: %i[create destroy]
       resource :me, only: :show, controller: :me
+      namespace :me do
+        resources :occasions, only: :index
+      end
+      resources :occasions, only: %i[create show], param: :token
     end
   end
 
