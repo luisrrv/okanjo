@@ -1,6 +1,6 @@
 # okanjo · warikan (割り勘) on Rails 8
 
-Split the bill for one occasion (a 飲み会, a trip) without signing up. Create an occasion,
+Split the bill for one occasion (a 飲み会, a trip), no sign-up needed. Create an occasion,
 share the link, add who paid for what, and the app tells everyone who pays whom.
 
 - **Live:** https://warikan.lrod.dev
@@ -18,9 +18,20 @@ the same domain in two stacks, and it shows how I design a system and ship it wi
 own the architecture and every decision, Claude Code implements from them, and the whole
 trail is in this repo.
 
+## Status
+- **Core (live):** occasions, expenses, settlement, receipts and the 30-day purge, with CI,
+  a Kamal deploy and Litestream backups.
+- **Phase 2, slice 2a (live):** optional accounts.
+- **Next:** 2b, a versioned JSON API (`/api/v1`) designed as if its client were external;
+  then 2c, which moves warikan v1 into this repo as the LINE front end on that API, with
+  LINE Login. After 2c there is one warikan. See [ADR 0021](docs/adr/0021-phase-2-shape.md).
+
 ## What it does
 - **Occasions, not groups.** Every calculation is a new occasion, reached by an unguessable
-  link. There's no login. A signed cookie remembers which member you are.
+  link. No login needed: a signed cookie remembers which member you are.
+- **Optional accounts** (email and password, from the Rails 8 auth generator). Signing in
+  links you to your member in each occasion and lists your occasions (自分の割り勘) on any
+  device. Without an account, everything works the same.
 - **Expenses** with one payer and an equal split. The payer can be left out of the split
   (e.g. a non-drinker paying the drinks tab), after a confirmation that states the effect in
   yen.
@@ -46,6 +57,8 @@ considered and their trade-offs. The system is summarised in
 | [0013](docs/adr/0013-settle-through-a-collector.md) | Settle through a single collector: trust over the fewest transfers |
 | [0016](docs/adr/0016-anonymous-core-with-30-day-retention.md) | No login in the core; 30-day retention; receipts |
 | [0019](docs/adr/0019-live-refresh-with-turbo-broadcasts.md) | Live refresh with Turbo page-refresh broadcasts and morphing |
+| [0021](docs/adr/0021-phase-2-shape.md) | Phase 2 in three slices: accounts, an external-grade API, then v1 as the LINE front end |
+| [0022](docs/adr/0022-optional-accounts-with-the-auth-generator.md) | Optional accounts with the Rails 8 auth generator |
 
 The feature specs written before each session are in [`docs/specs/`](docs/specs/).
 
