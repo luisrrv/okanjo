@@ -17,7 +17,8 @@ and the purge job. Phase 2's optional accounts (2a) and JSON API (2b) are live t
 | Deploy (session 4) | live since 2026-11-13 |
 | Phase 2a: optional accounts (ADR 0022) | live since 2026-11-13 |
 | Phase 2b: JSON API at `/api/v1` (ADR 0023) | live since 2026-11-17 |
-| Phase 2c: LIFF client, LINE Login | planned |
+| Phase 2c-1: warikan v1 moved in, served at `/liff` (ADR 0024) | live since 2026-11-18 |
+| Phase 2c-2: LINE Login, linking, the LIFF app on the API | planned |
 
 ## System context
 
@@ -260,7 +261,7 @@ A member who paid for something or is in a split can't be deleted on their own
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,
   and system specs in headless Chrome. `bin/ci` runs the same checks locally (ADR 0014).
 
-## Phase 2 *(in progress, ADR 0021: 2a and 2b live)*
+## Phase 2 *(in progress, ADR 0021: 2a, 2b and 2c-1 live)*
 
 Three slices, each shippable on its own:
 1. **2a, accounts (ADR 0022):** the Rails 8 auth generator with login kept optional, sign-up,
@@ -271,6 +272,8 @@ Three slices, each shippable on its own:
    [The API](#the-api-live).
 3. **2c, LINE:** warikan v1 moves in as `liff/`, served at `/liff` and calling the API, with LINE
    Login as a second sign-in on the same `User`, including linking LINE to an existing
-   email account.
+   email account. Split in two (ADR 0024): **2c-1**, live since 2026-11-18, moved v1 into `liff/`
+   and serves it at `/liff` from a Node build stage, with no change for users; **2c-2** adds LINE
+   Login, linking and the screens on the API.
 
 The core keeps running on its own (ADR 0016, 0017).

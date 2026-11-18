@@ -1,6 +1,6 @@
 # Spec: move warikan v1 in and serve it at /liff (slice 2c-1)
 
-- Status: Draft (2026-11-18)
+- Status: Implemented (2026-11-18); live at https://warikan.lrod.dev/liff
 - ADRs: 0003 (2026-11-18 update), 0017, 0021, 0024
 
 ## Goal
@@ -90,7 +90,8 @@ and expect `200`. If one gets `406`, the fix is decided before deploying.
 
 ## Edge cases
 - **v1's share links** (`liff.line.me/<LIFF ID>?total=…&people=…`) open the new endpoint with
-  the same query string, so the calculator is prefilled as before.
+  the same query string. v1 never read them (its code only builds them), so the calculator
+  opens empty, as it always has. Prefilling is a possible 2c-2 addition.
 - **The LIFF ID is missing at build time:** the build still succeeds (v1's check in `main.ts` runs
   in the browser), and the page would fail on launch. The Dockerfile always sets it.
 - **A deploy while someone has the LIFF app open:** their page keeps its old assets (still on
@@ -114,5 +115,19 @@ and expect `200`. If one gets `406`, the fix is decided before deploying.
 3. A local `docker build` produces an image with `public/liff/assets/*` and
    `app/views/liff/show.html`, and no `node` binary in the final stage.
 4. **In production:** `/liff` and one asset return `200` with the right cache headers. After the
-   endpoint switch, in LINE: the calculator works, sharing sends the card, and tapping an old
-   shared card opens the calculator prefilled.
+   endpoint switch, in LINE: the calculator works, sharing sends the card, and tapping a shared
+   card opens the calculator.
+
+## Verified in production (2026-11-18)
+Deployed as `42d8e5b`, merged with a merge commit so v1's 13 commits stay reachable. PR CI passed,
+including the new `liff` job.
+
+- `/liff` with LINE's iOS user agent and v1's query parameters: `200`, `text/html`,
+  `Cache-Control: no-cache`. The three hashed assets: `200` with a one-year cache. `og.png`: `200`.
+  The website (`/up`) and the API (`401` without a token) unchanged; no errors in the logs.
+- In a desktop browser, `/liff` starts the calculator. Before the switch, LIFF warned that the page
+  wasn't under the endpoint URL (still Netlify), as expected.
+- Luis switched the LIFF endpoint URL to `https://warikan.lrod.dev/liff` in the LINE Developers
+  console and checked the app in LINE.
+- Found while checking: v1 never prefilled from its share links (see Edge cases); this spec had
+  repeated a code comment that said it did.
