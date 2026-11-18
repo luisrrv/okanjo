@@ -26,8 +26,8 @@ trail is in this repo.
 - **Phase 2, slice 2b (live):** a versioned JSON API (`/api/v1`) designed as if its client
   were external. See [Try the API](#try-the-api).
 - **Phase 2, slice 2c-1 (live):** warikan v1 moved into `liff/` and is served at `/liff`.
-- **Phase 2, slice 2c-2 (built, being released):** LINE Login, linking an email account, and
-  the LIFF app's occasion screens on the API. After 2c there is one warikan. See [ADR 0021](docs/adr/0021-phase-2-shape.md) and
+- **Phase 2, slice 2c-2 (live):** LINE Login, linking an email account, and the LIFF app's
+  occasion screens on the API. There is now one warikan, on the web and in LINE. See [ADR 0021](docs/adr/0021-phase-2-shape.md) and
   [ADR 0024](docs/adr/0024-line-front-end-and-line-login.md).
 
 ## What it does
