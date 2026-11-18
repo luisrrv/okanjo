@@ -39,6 +39,28 @@ jobs:
       - name: Scan for security vulnerabilities in JavaScript dependencies
         run: bin/importmap audit
 
+  # The LIFF app (ADR 0024). A required check, so a broken client build can't reach a deploy.
+  liff:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: liff
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: corepack enable && pnpm install --frozen-lockfile
+
+      - name: Typecheck and build
+        run: pnpm build
+
   lint:
     runs-on: ubuntu-latest
     env:
