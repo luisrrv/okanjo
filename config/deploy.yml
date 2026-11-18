@@ -49,6 +49,9 @@ env:
     SOLID_QUEUE_IN_PUMA: true
     # Backups (ADR 0020).
     LITESTREAM_IN_PUMA: true
+    # The LINE Login channel that owns the LIFF app; LINE checks ID tokens against it (ADR 0024).
+    # Public (the LIFF ID starts with it), so not a secret.
+    LINE_CHANNEL_ID: "2009905533"
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3
