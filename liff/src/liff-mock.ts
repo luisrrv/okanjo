@@ -7,9 +7,11 @@
  * `@line/liff` SDK in production builds.
  *
  * Same shape as the real SDK calls — no `if (mock)` branching at the call sites.
+ *
+ * Signing in can't be mocked end to end: the server checks ID tokens with LINE. To try the
+ * signed-in screens locally, get a token from POST /api/v1/session (an email account) and store
+ * it under the `warikan-api-token` key in localStorage.
  */
-
-import type { Lang } from './i18n';
 
 type Message = unknown; // we don't validate shape here — the real SDK does
 
@@ -22,9 +24,20 @@ const liffMock = {
     return true;
   },
 
-  getLanguage(): string {
-    // mirror what real LIFF returns; in dev we just defer to the browser
-    return typeof navigator !== 'undefined' ? navigator.language : 'ja-JP';
+  isLoggedIn(): boolean {
+    return false;
+  },
+
+  login(_config?: { redirectUri?: string }): void {
+    alert('[mock] LINE login is not available locally. See liff-mock.ts.');
+  },
+
+  logout(): void {
+    console.info('[liff-mock] logout()');
+  },
+
+  getIDToken(): string | null {
+    return null;
   },
 
   async shareTargetPicker(messages: Message[]): Promise<{ status: 'success' }> {
@@ -41,4 +54,3 @@ const liffMock = {
 
 // Match the real SDK's default-export shape so the dynamic import in main.ts works.
 export default liffMock;
-export { type Lang };

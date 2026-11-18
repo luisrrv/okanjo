@@ -1,29 +1,27 @@
 /**
- * Splits a total amount across N people, rounding each share UP to the nearest ¥100.
+ * Splits a total across N people, rounding each share UP to the yen: the same rule as the
+ * server's Expense#share_amount (ADR 0008), so the calculator and occasions agree (ADR 0024, D1).
+ * The person who paid keeps the odd yen.
  *
- * The ¥100 rounding is the JP cultural convention for warikan — nobody asks for ¥17.
- * Rounding up (rather than nearest) means the organizer never ends up short.
- *
- * Returns null for invalid input (zero/negative people, negative total, NaN).
- * The caller decides how to display "no result yet" — separation of concerns.
+ * Returns null for invalid input (zero or negative people, a negative total, NaN). The caller
+ * decides how to show "no result yet".
  */
 export type SplitResult = {
   perPerson: number;
   total: number;
   people: number;
-  /** perPerson * people; equals or exceeds `total` because of round-up. */
+  /** perPerson * people; equals or exceeds `total` because of the round-up. */
   collected: number;
-  /** collected - total; what the organizer pockets from the rounding. */
+  /** collected - total: the odd yen the payer keeps. */
   surplus: number;
 };
 
 export function splitBill(total: number, people: number): SplitResult | null {
   if (!Number.isFinite(total) || !Number.isFinite(people)) return null;
   if (total < 0 || people < 1) return null;
-  if (!Number.isInteger(people)) return null;
+  if (!Number.isInteger(total) || !Number.isInteger(people)) return null;
 
-  const rawShare = total / people;
-  const perPerson = Math.ceil(rawShare / 100) * 100;
+  const perPerson = Math.ceil(total / people);
   const collected = perPerson * people;
   const surplus = collected - total;
 

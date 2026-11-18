@@ -45,6 +45,10 @@ jobs:
     defaults:
       run:
         working-directory: liff
+    env:
+      # Public, as in the Dockerfile. Without it Vite treats main.ts's guard as always throwing
+      # and drops the rest of the app, so CI would build an empty bundle.
+      VITE_LIFF_ID: 2009905533-DGtLYpEl
 
     steps:
       - name: Checkout code

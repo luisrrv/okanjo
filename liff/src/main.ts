@@ -1,7 +1,5 @@
 import './style.css';
 
-import './style.css';
-
 // Route between mock (dev) and real SDK (prod). Same call sites either way.
 const liff = import.meta.env.DEV
   ? (await import('./liff-mock')).default
@@ -14,8 +12,12 @@ if (!import.meta.env.DEV && !LIFF_ID) {
 }
 await liff.init({ liffId: LIFF_ID ?? 'dev-no-id' });
 
-import { detectLang, getLang, setLang, t, onLangChange, type StringKey } from './i18n';
+import { t, type StringKey } from './i18n';
 import { splitBill, type SplitResult } from './calc';
+import { formatDate, formatYen, parseNumeric } from './format';
+import { shareResult } from './share';
+import { ApiError, myOccasions } from './api';
+import { isSignedIn, returningFromLogin, signIn, signOut, withSession } from './auth';
 
 // ---------- DOM lookup ----------
 
@@ -28,39 +30,26 @@ const $ = <T extends HTMLElement>(sel: string): T => {
 const totalInput = $<HTMLInputElement>('#total');
 const peopleInput = $<HTMLInputElement>('#people');
 const resultEl = $<HTMLSpanElement>('#result');
+const surplusEl = $<HTMLParagraphElement>('#surplus');
 const shareBtn = $<HTMLButtonElement>('#share');
-const langBtns = document.querySelectorAll<HTMLButtonElement>('.lang-btn');
+const messageEl = $<HTMLParagraphElement>('#message');
+const calculatorView = $<HTMLElement>('#calculator');
+const occasionsView = $<HTMLElement>('#occasions');
+const occasionList = $<HTMLUListElement>('#occasion-list');
+const occasionsStatus = $<HTMLParagraphElement>('#occasions-status');
+const navCalculator = $<HTMLButtonElement>('#nav-calculator');
+const navOccasions = $<HTMLButtonElement>('#nav-occasions');
+const signInBtn = $<HTMLButtonElement>('#sign-in');
+const signOutBtn = $<HTMLButtonElement>('#sign-out');
 
-// ---------- App state ----------
-// Single source of truth. All UI updates funnel through render().
+// ---------- Copy ----------
 
-const state = {
-  total: NaN,
-  people: NaN,
-  result: null as SplitResult | null,
-};
-
-// ---------- i18n wiring ----------
-
-setLang(detectLang());
-
-function applyTranslations(): void {
-  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
-    const key = el.dataset.i18n as StringKey | undefined;
-    if (key) el.textContent = t(key);
-  });
-
-  totalInput.placeholder = t('placeholderTotal');
-  peopleInput.placeholder = t('placeholderPeople');
-
-  langBtns.forEach((btn) => {
-    btn.setAttribute('aria-pressed', String(btn.dataset.lang === getLang()));
-  });
-
-  document.documentElement.lang = getLang();
- 
-  syncSuffixPadding();	
-}
+document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+  const key = el.dataset.i18n as StringKey | undefined;
+  if (key) el.textContent = t(key);
+});
+totalInput.placeholder = t('placeholderTotal');
+peopleInput.placeholder = t('placeholderPeople');
 
 function syncSuffixPadding(): void {
   document.querySelectorAll<HTMLElement>('.input-wrap').forEach((wrap) => {
@@ -71,37 +60,55 @@ function syncSuffixPadding(): void {
     wrap.style.setProperty('--suffix-pad', `${pad}px`);
   });
 }
-
-onLangChange(applyTranslations);
 window.addEventListener('resize', syncSuffixPadding);
-applyTranslations();
+syncSuffixPadding();
 
-langBtns.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const lang = btn.dataset.lang;
-    if (lang === 'ja' || lang === 'en') setLang(lang);
-  });
-});
+// ---------- Messages ----------
 
-// ---------- Input handling ----------
-// Strip everything that isn't a digit. Keeps the model strictly numeric
-// while letting the user type with any formatting they want.
-
-function parseNumeric(raw: string): number {
-  const cleaned = raw.replace(/[^\d]/g, '');
-  return cleaned === '' ? NaN : Number(cleaned);
+function showMessage(text: string | null): void {
+  messageEl.textContent = text ?? '';
+  messageEl.hidden = text === null;
 }
 
+/** The server's Japanese detail when there is one, else a generic message. */
+function describe(error: unknown): string {
+  if (error instanceof ApiError && error.detail) return error.detail;
+  console.error(error);
+  return t('somethingWentWrong');
+}
+
+// ---------- Views ----------
+
+type View = 'calculator' | 'occasions';
+
+function show(view: View): void {
+  calculatorView.hidden = view !== 'calculator';
+  occasionsView.hidden = view !== 'occasions';
+  const signedIn = isSignedIn();
+  navCalculator.hidden = !signedIn || view === 'calculator';
+  navOccasions.hidden = !signedIn || view === 'occasions';
+  signInBtn.hidden = signedIn;
+  signOutBtn.hidden = !signedIn;
+  if (view === 'calculator') syncSuffixPadding();
+  if (view === 'occasions') void loadOccasions();
+}
+
+// ---------- Calculator ----------
+
+const state = {
+  total: NaN,
+  people: NaN,
+  result: null as SplitResult | null,
+};
+
 function formatThousands(n: number): string {
-  return Number.isFinite(n) ? n.toLocaleString('en-US') : '';
+  return Number.isFinite(n) ? n.toLocaleString('ja-JP') : '';
 }
 
 function onTotalInput(): void {
-  const n = parseNumeric(totalInput.value);
-  state.total = n;
-  // Reformat without breaking the cursor: only reformat on blur or when content actually changed.
-  // For v1 we accept that the cursor jumps to the end on reformat — acceptable tradeoff for simplicity.
-  const formatted = formatThousands(n);
+  state.total = parseNumeric(totalInput.value);
+  // The cursor jumps to the end on reformat: an accepted tradeoff for simplicity.
+  const formatted = formatThousands(state.total);
   if (totalInput.value !== formatted) totalInput.value = formatted;
   recompute();
 }
@@ -114,30 +121,18 @@ function onPeopleInput(): void {
 totalInput.addEventListener('input', onTotalInput);
 peopleInput.addEventListener('input', onPeopleInput);
 
-// ---------- Compute + render ----------
-
 function recompute(): void {
   state.result = splitBill(state.total, state.people);
   render();
 }
 
 function render(): void {
-  if (state.result) {
-    resultEl.textContent = formatYen(state.result.perPerson);
-    shareBtn.disabled = false;
-  } else {
-    resultEl.textContent = '—';
-    shareBtn.disabled = true;
-  }
+  const result = state.result;
+  resultEl.textContent = result ? formatYen(result.perPerson) : '—';
+  shareBtn.disabled = !result;
+  surplusEl.hidden = !result || result.surplus === 0;
+  surplusEl.textContent = result ? `${t('oddYenLabel')}: ${formatYen(result.surplus)}` : '';
 }
-
-function formatYen(n: number): string {
-  return `¥${n.toLocaleString('en-US')}`;
-}
-
-// ---------- Share button ----------
-
-import { shareResult } from './share';
 
 shareBtn.addEventListener('click', async () => {
   if (!state.result || shareBtn.disabled) return;
@@ -147,7 +142,88 @@ shareBtn.addEventListener('click', async () => {
   try {
     await shareResult(liff, state.result);
   } finally {
-    // Re-enable based on whether the result is still valid
     render();
   }
 });
+
+/** v1's share cards link here with ?total=…&people=…; fill them in (it never did before). */
+function prefillFromUrl(): boolean {
+  const params = new URLSearchParams(location.search);
+  const total = params.get('total');
+  const people = params.get('people');
+  if (total === null && people === null) return false;
+  totalInput.value = total ?? '';
+  peopleInput.value = people ?? '';
+  onTotalInput();
+  onPeopleInput();
+  return true;
+}
+
+// ---------- My occasions ----------
+
+async function loadOccasions(): Promise<void> {
+  occasionsStatus.textContent = t('loading');
+  occasionList.replaceChildren();
+  try {
+    const occasions = await withSession(liff, myOccasions);
+    occasionsStatus.textContent = occasions.length === 0 ? t('noOccasions') : '';
+    occasionList.replaceChildren(
+      ...occasions.map((occasion) => {
+        // Opens the occasion on the website for now; the in-app screen comes in step 3.
+        const link = document.createElement('a');
+        link.className = 'occasion-item';
+        link.href = `/groups/${encodeURIComponent(occasion.token)}`;
+
+        const name = document.createElement('span');
+        name.className = 'occasion-name';
+        name.textContent = occasion.name ?? t('appTitle');
+
+        const meta = document.createElement('span');
+        meta.className = 'muted';
+        meta.textContent = `${occasion.memberCount}${t('membersSuffix')} · ${t('deletesOn')} ${formatDate(occasion.deletionDate)}`;
+
+        link.append(name, meta);
+        const item = document.createElement('li');
+        item.append(link);
+        return item;
+      }),
+    );
+  } catch (error) {
+    occasionsStatus.textContent = '';
+    showMessage(describe(error));
+  }
+}
+
+// ---------- Signing in and out ----------
+
+async function startSignIn(): Promise<void> {
+  showMessage(null);
+  signInBtn.disabled = true;
+  try {
+    if (await signIn(liff)) show('occasions');
+  } catch (error) {
+    showMessage(describe(error));
+  } finally {
+    signInBtn.disabled = false;
+  }
+}
+
+signInBtn.addEventListener('click', () => void startSignIn());
+signOutBtn.addEventListener('click', async () => {
+  await signOut(liff);
+  show('calculator');
+});
+navCalculator.addEventListener('click', () => show('calculator'));
+navOccasions.addEventListener('click', () => show('occasions'));
+
+// ---------- Start ----------
+// A shared card opens the calculator. Otherwise: back from LINE's login page, finish signing in;
+// signed in, my occasions; signed out, the calculator, as v1 always was.
+
+if (prefillFromUrl()) {
+  show('calculator');
+} else if (returningFromLogin(liff)) {
+  void startSignIn();
+} else {
+  show(isSignedIn() ? 'occasions' : 'calculator');
+}
