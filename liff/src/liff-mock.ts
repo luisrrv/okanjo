@@ -40,6 +40,10 @@ const liffMock = {
     return null;
   },
 
+  async getProfile(): Promise<{ displayName: string }> {
+    return { displayName: 'ローカル太郎' };
+  },
+
   async shareTargetPicker(messages: Message[]): Promise<{ status: 'success' }> {
     console.group('[liff-mock] shareTargetPicker');
     console.log('would send messages:', messages);

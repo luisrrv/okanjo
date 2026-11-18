@@ -57,9 +57,14 @@
 
       <section class="view" id="occasions" hidden>
         <h2 class="view-title" data-i18n="myOccasions"></h2>
+        <button type="button" class="share-btn" id="new-occasion" data-i18n="newOccasion"></button>
         <p class="muted" id="occasions-status"></p>
         <ul class="occasion-list" id="occasion-list"></ul>
+        <button type="button" class="nav-btn" id="link-email" data-i18n="linkEmail" hidden></button>
       </section>
+
+      <!-- An occasion, or one of its forms; built in occasion.ts. -->
+      <section id="screen" hidden></section>
     </main>
 
     <script type="module" src="/src/main.ts"></script>
