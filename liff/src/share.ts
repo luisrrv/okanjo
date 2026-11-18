@@ -8,6 +8,7 @@
  */
 
 import type { SplitResult } from './calc';
+import type { Occasion } from './api';
 import { t } from './i18n';
 import { formatYen } from './format';
 
@@ -23,12 +24,8 @@ const ACCENT = '#06C755';
  * The deep link the recipient taps. Same origin as the app, with prefilled query params.
  * In dev, falls back to the dev URL so testing the mock end-to-end works.
  */
-function buildDeepLink(result: SplitResult): string {
+function buildDeepLink(params: URLSearchParams): string {
   const liffId = import.meta.env.VITE_LIFF_ID;
-  const params = new URLSearchParams({
-    total: String(result.total),
-    people: String(result.people),
-  });
 
   // Inside LINE: liff.line.me/{liffId}?... keeps the user in LIFF context.
   // Outside LINE / dev: fall back to the web origin so the link still works.
@@ -37,7 +34,7 @@ function buildDeepLink(result: SplitResult): string {
   }
 
   const base = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${base}/?${params.toString()}`;
+  return `${base}${import.meta.env.BASE_URL}?${params.toString()}`;
 }
 
 
@@ -47,7 +44,7 @@ function buildDeepLink(result: SplitResult): string {
  */
 export function buildShareMessage(result: SplitResult) {
   const altText = `${t('shareCardHeader')}: ${formatYen(result.perPerson)} × ${result.people}`;
-  const link = buildDeepLink(result);
+  const link = buildDeepLink(new URLSearchParams({ total: String(result.total), people: String(result.people) }));
 
   return {
     type: 'flex',
@@ -176,6 +173,71 @@ export async function shareResult(liff: LiffLike, result: SplitResult): Promise<
 
   try {
     await liff.shareTargetPicker([message]);
+    return true;
+  } catch (err) {
+    console.warn('[share] picker closed or failed:', err);
+    return false;
+  }
+}
+
+/**
+ * A card for an occasion: who collects, and a button that opens it in the app (?occasion=…).
+ * Opening it needs LINE sign-in; the occasion's token is what grants access (ADR 0005).
+ */
+export function buildOccasionShareMessage(occasion: Occasion) {
+  const total = occasion.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const collector = occasion.members.find((member) => member.id === occasion.settlement.collectorId);
+  const title = occasion.name ?? t('appTitle');
+  return {
+    type: 'flex',
+    altText: `${t('shareCardHeader')}: ${title}`,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: ACCENT,
+        paddingAll: '12px',
+        contents: [{ type: 'text', text: t('shareCardHeader'), color: '#FFFFFF', weight: 'bold', size: 'sm' }],
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        paddingAll: '16px',
+        contents: [
+          { type: 'text', text: title, size: 'lg', weight: 'bold', color: '#1A1A1A', wrap: true },
+          { type: 'text', text: `${t('totalLabel')} ${formatYen(total)} · ${occasion.members.length}${t('people')}`, size: 'sm', color: '#888888' },
+          ...(collector
+            ? [{ type: 'text', text: `${collector.name}${t('collectorSuffix')}`, size: 'sm', color: '#1A1A1A', wrap: true }]
+            : []),
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '8px',
+        contents: [
+          {
+            type: 'button',
+            style: 'link',
+            height: 'sm',
+            action: { type: 'uri', label: t('shareCardOpen'), uri: buildDeepLink(new URLSearchParams({ occasion: occasion.token })) },
+          },
+        ],
+      },
+    },
+  };
+}
+
+export async function shareOccasion(liff: LiffLike, occasion: Occasion): Promise<boolean> {
+  if (!liff.isInClient()) {
+    alert(t('shareOnlyInLine'));
+    return false;
+  }
+  try {
+    await liff.shareTargetPicker([buildOccasionShareMessage(occasion)]);
     return true;
   } catch (err) {
     console.warn('[share] picker closed or failed:', err);

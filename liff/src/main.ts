@@ -15,9 +15,12 @@ await liff.init({ liffId: LIFF_ID ?? 'dev-no-id' });
 import { t, type StringKey } from './i18n';
 import { splitBill, type SplitResult } from './calc';
 import { formatDate, formatYen, parseNumeric } from './format';
-import { shareResult } from './share';
-import { ApiError, myOccasions } from './api';
-import { isSignedIn, returningFromLogin, signIn, signOut, withSession } from './auth';
+import { shareOccasion, shareResult } from './share';
+import * as api from './api';
+import { ApiError, type Occasion } from './api';
+import { isSignedIn, linkEmail, returningFromLogin, signIn, signOut, withSession } from './auth';
+import { renderExpenseForm, renderLinkEmailForm, renderNewOccasionForm, renderOccasion } from './occasion';
+import { h } from './dom';
 
 // ---------- DOM lookup ----------
 
@@ -35,8 +38,11 @@ const shareBtn = $<HTMLButtonElement>('#share');
 const messageEl = $<HTMLParagraphElement>('#message');
 const calculatorView = $<HTMLElement>('#calculator');
 const occasionsView = $<HTMLElement>('#occasions');
+const screen = $<HTMLElement>('#screen');
 const occasionList = $<HTMLUListElement>('#occasion-list');
 const occasionsStatus = $<HTMLParagraphElement>('#occasions-status');
+const newOccasionBtn = $<HTMLButtonElement>('#new-occasion');
+const linkEmailBtn = $<HTMLButtonElement>('#link-email');
 const navCalculator = $<HTMLButtonElement>('#nav-calculator');
 const navOccasions = $<HTMLButtonElement>('#nav-occasions');
 const signInBtn = $<HTMLButtonElement>('#sign-in');
@@ -77,13 +83,20 @@ function describe(error: unknown): string {
   return t('somethingWentWrong');
 }
 
-// ---------- Views ----------
+const fail = (error: unknown): void => showMessage(describe(error));
+const session = <T>(call: () => Promise<T>): Promise<T> => withSession(liff, call);
 
-type View = 'calculator' | 'occasions';
+// ---------- Views ----------
+// The calculator and my occasions are fixed sections; an occasion and its forms are built into
+// #screen.
+
+type View = 'calculator' | 'occasions' | 'screen';
 
 function show(view: View): void {
   calculatorView.hidden = view !== 'calculator';
   occasionsView.hidden = view !== 'occasions';
+  screen.hidden = view !== 'screen';
+  if (view !== 'screen') current = null;
   const signedIn = isSignedIn();
   navCalculator.hidden = !signedIn || view === 'calculator';
   navOccasions.hidden = !signedIn || view === 'occasions';
@@ -91,6 +104,12 @@ function show(view: View): void {
   signOutBtn.hidden = !signedIn;
   if (view === 'calculator') syncSuffixPadding();
   if (view === 'occasions') void loadOccasions();
+  window.scrollTo(0, 0);
+}
+
+function showScreen(content: HTMLElement): void {
+  screen.replaceChildren(content);
+  show('screen');
 }
 
 // ---------- Calculator ----------
@@ -147,8 +166,7 @@ shareBtn.addEventListener('click', async () => {
 });
 
 /** v1's share cards link here with ?total=…&people=…; fill them in (it never did before). */
-function prefillFromUrl(): boolean {
-  const params = new URLSearchParams(location.search);
+function prefillFromUrl(params: URLSearchParams): boolean {
   const total = params.get('total');
   const people = params.get('people');
   if (total === null && people === null) return false;
@@ -165,44 +183,143 @@ async function loadOccasions(): Promise<void> {
   occasionsStatus.textContent = t('loading');
   occasionList.replaceChildren();
   try {
-    const occasions = await withSession(liff, myOccasions);
+    const [occasions, user] = await session(() => Promise.all([api.myOccasions(), api.me()]));
+    linkEmailBtn.hidden = user.emailAddress !== null;
     occasionsStatus.textContent = occasions.length === 0 ? t('noOccasions') : '';
     occasionList.replaceChildren(
       ...occasions.map((occasion) => {
-        // Opens the occasion on the website for now; the in-app screen comes in step 3.
-        const link = document.createElement('a');
-        link.className = 'occasion-item';
-        link.href = `/groups/${encodeURIComponent(occasion.token)}`;
-
-        const name = document.createElement('span');
-        name.className = 'occasion-name';
-        name.textContent = occasion.name ?? t('appTitle');
-
-        const meta = document.createElement('span');
-        meta.className = 'muted';
-        meta.textContent = `${occasion.memberCount}${t('membersSuffix')} · ${t('deletesOn')} ${formatDate(occasion.deletionDate)}`;
-
-        link.append(name, meta);
-        const item = document.createElement('li');
-        item.append(link);
-        return item;
+        const button = h(
+          'button',
+          { type: 'button', class: 'occasion-item' },
+          h('span', { class: 'occasion-name' }, occasion.name ?? t('appTitle')),
+          h(
+            'span',
+            { class: 'muted' },
+            `${occasion.memberCount}${t('membersSuffix')} · ${t('deletesOn')} ${formatDate(occasion.deletionDate)}`,
+          ),
+        );
+        button.addEventListener('click', () => void openOccasion(occasion.token));
+        return h('li', {}, button);
       }),
     );
   } catch (error) {
     occasionsStatus.textContent = '';
-    showMessage(describe(error));
+    fail(error);
   }
 }
 
+newOccasionBtn.addEventListener('click', async () => {
+  showMessage(null);
+  // Your LINE name by default (the profile scope); typing it works too.
+  const profile = await liff.getProfile().catch(() => null);
+  showScreen(
+    renderNewOccasionForm(
+      profile?.displayName ?? '',
+      async (name, memberName) => {
+        const occasion = await session(() => api.createOccasion(name, memberName));
+        await openOccasion(occasion.token);
+      },
+      () => show('occasions'),
+      fail,
+    ),
+  );
+});
+
+linkEmailBtn.addEventListener('click', () => {
+  showMessage(null);
+  showScreen(
+    renderLinkEmailForm(
+      async (emailAddress, password) => {
+        await linkEmail(liff, emailAddress, password);
+        show('occasions');
+        showMessage(null);
+        alert(t('linked'));
+      },
+      () => show('occasions'),
+      fail,
+    ),
+  );
+});
+
+// ---------- An occasion ----------
+// Re-read with If-None-Match when the app comes back into view and after every write, so other
+// people's changes show up (there are no pushes to API clients, ADR 0023).
+
+let current: { token: string; etag: string | null; occasion: Occasion } | null = null;
+
+async function openOccasion(token: string): Promise<void> {
+  showMessage(null);
+  try {
+    const loaded = await session(() => api.getOccasion(token));
+    if (!loaded) return;
+    current = { token, etag: loaded.etag, occasion: loaded.occasion };
+    showScreen(occasionScreen(loaded.occasion));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      show('occasions');
+      showMessage(t('occasionGone'));
+    } else {
+      fail(error);
+    }
+  }
+}
+
+async function refreshOccasion(): Promise<void> {
+  if (!current || screen.hidden) return;
+  const { token, etag } = current;
+  const loaded = await session(() => api.getOccasion(token, etag ?? undefined)).catch(() => null);
+  if (!loaded || current?.token !== token) return;
+  current = { token, etag: loaded.etag, occasion: loaded.occasion };
+  screen.replaceChildren(occasionScreen(loaded.occasion));
+}
+
+function occasionScreen(occasion: Occasion): HTMLElement {
+  return renderOccasion(occasion, {
+    addExpense: () =>
+      showScreen(
+        renderExpenseForm(
+          occasion,
+          async (expense) => {
+            await session(() => api.addExpense(occasion.token, expense));
+            await openOccasion(occasion.token);
+          },
+          () => void openOccasion(occasion.token),
+          fail,
+        ),
+      ),
+    addMember: async (name, claim) => {
+      await session(() => api.addMember(occasion.token, name, claim));
+      await openOccasion(occasion.token);
+    },
+    claim: async (memberId) => {
+      await session(() => api.claimMember(occasion.token, memberId));
+      await openOccasion(occasion.token);
+    },
+    share: () => void shareOccasion(liff, occasion),
+    fail,
+  });
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') void refreshOccasion();
+});
+
 // ---------- Signing in and out ----------
+
+// A shared occasion opened while signed out: remembered across LINE's login page.
+const PENDING_OCCASION_KEY = 'warikan-pending-occasion';
 
 async function startSignIn(): Promise<void> {
   showMessage(null);
   signInBtn.disabled = true;
   try {
-    if (await signIn(liff)) show('occasions');
+    if (!(await signIn(liff))) return;
+    const pending = sessionStorage.getItem(PENDING_OCCASION_KEY);
+    sessionStorage.removeItem(PENDING_OCCASION_KEY);
+    if (pending) await openOccasion(pending);
+    else show('occasions');
   } catch (error) {
-    showMessage(describe(error));
+    fail(error);
   } finally {
     signInBtn.disabled = false;
   }
@@ -217,10 +334,24 @@ navCalculator.addEventListener('click', () => show('calculator'));
 navOccasions.addEventListener('click', () => show('occasions'));
 
 // ---------- Start ----------
-// A shared card opens the calculator. Otherwise: back from LINE's login page, finish signing in;
+// Back from LINE's login page: finish signing in (and open a pending occasion). An occasion link
+// opens that occasion, after signing in; a calculator link opens the calculator. Otherwise:
 // signed in, my occasions; signed out, the calculator, as v1 always was.
 
-if (prefillFromUrl()) {
+const params = new URLSearchParams(location.search);
+const occasionToken = params.get('occasion');
+if (occasionToken && !isSignedIn()) sessionStorage.setItem(PENDING_OCCASION_KEY, occasionToken);
+
+if (returningFromLogin(liff)) {
+  void startSignIn();
+} else if (occasionToken) {
+  if (isSignedIn()) {
+    void openOccasion(occasionToken);
+  } else {
+    show('calculator');
+    showMessage(t('signInToOpen'));
+  }
+} else if (prefillFromUrl(params)) {
   show('calculator');
 } else if (returningFromLogin(liff)) {
   void startSignIn();

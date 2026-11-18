@@ -3,7 +3,7 @@
  * until a 401. Only an explicit tap starts it, so opening the calculator never creates an account.
  */
 
-import { ApiError, forgetToken, signInWithIdToken, signOut as apiSignOut, storedToken } from './api';
+import { ApiError, forgetToken, linkEmailAccount, signInWithIdToken, signOut as apiSignOut, storedToken } from './api';
 
 export type LiffAuth = {
   isInClient(): boolean;
@@ -56,6 +56,13 @@ export async function withSession<T>(liff: LiffAuth, call: () => Promise<T>): Pr
     if (!(await signIn(liff))) throw error;
     return call();
   }
+}
+
+/** Links an email account to this LINE sign-in; afterwards the app is signed into that account. */
+export async function linkEmail(liff: LiffAuth, emailAddress: string, password: string): Promise<void> {
+  const idToken = liff.getIDToken();
+  if (!idToken) throw new ApiError(401, 'invalid_line_token', '');
+  await linkEmailAccount(idToken, emailAddress, password);
 }
 
 export async function signOut(liff: LiffAuth): Promise<void> {
