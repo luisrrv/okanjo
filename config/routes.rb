@@ -21,9 +21,12 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
       resource :session, only: %i[create destroy]
+      # Not `namespace :session`: an Api::V1::Session module would shadow the Session model.
+      post "session/line", to: "line_sessions#create", as: :line_session
       resource :me, only: :show, controller: :me
       namespace :me do
         resources :occasions, only: :index
+        resource :line, only: :destroy
       end
       resources :occasions, only: %i[create show], param: :token do
         resources :members, only: %i[create destroy] do

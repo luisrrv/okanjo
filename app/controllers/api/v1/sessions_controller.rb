@@ -8,9 +8,7 @@ class Api::V1::SessionsController < Api::V1::BaseController
     email_address, password = params.expect(:email_address, :password)
 
     if user = User.authenticate_by(email_address:, password:)
-      @session = user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip)
-      @expires_at = Session::API_TOKEN_TTL.from_now
-      render :create, status: :created, location: api_v1_me_url
+      start_api_session_for user
     else
       render_problem :invalid_credentials, status: :unauthorized
     end

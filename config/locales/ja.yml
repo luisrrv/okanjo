@@ -233,3 +233,8 @@ ja:
       already_claimed_here: アカウントはこのイベントの別のメンバーと連携済みです
       member_in_use: 支払いに関わっているメンバーは削除できません
       rate_limited: しばらくしてからもう一度お試しください
+      invalid_line_token: LINEのログイン情報を確認できませんでした。もう一度ログインしてください
+      line_unavailable: LINEに接続できません。しばらくしてからもう一度お試しください
+      email_account_linked_elsewhere: このメールアカウントは別のLINEアカウントと連携済みです
+      line_linked_elsewhere: このLINEアカウントは別のメールアカウントと連携済みです
+      cannot_unlink: ログイン方法がなくなるため、連携を解除できません

@@ -15,6 +15,12 @@ RSpec.describe "Password resets", type: :request do
     expect(flash[:notice]).to eq("メールアドレスが登録されていれば、再設定用のリンクを送りました。")
   end
 
+  it "doesn't find a LINE-only account, which has no address, when the address is missing" do
+    create(:user, :line_only)
+
+    expect { post passwords_path, params: {} }.not_to have_enqueued_mail(PasswordsMailer, :reset)
+  end
+
   it "changes the password and logs out every device" do
     user = create(:user)
     user.sessions.create!

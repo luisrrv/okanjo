@@ -9,7 +9,7 @@ RSpec.describe "API v1 authentication", type: :request do
     get api_v1_me_path, headers: bearer(token)
 
     expect(response).to have_http_status(:ok)
-    expect(response.parsed_body).to eq("id" => user.id, "email_address" => "luis@example.com")
+    expect(response.parsed_body).to eq("id" => user.id, "email_address" => "luis@example.com", "line_linked" => false)
   end
 
   it "asks for a bearer token when none is sent" do

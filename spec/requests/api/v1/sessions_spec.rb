@@ -12,7 +12,7 @@ RSpec.describe "API v1 sessions", type: :request do
     expect(response.parsed_body).to match(
       "token" => a_kind_of(String),
       "expires_at" => 30.days.from_now.iso8601,
-      "user" => { "id" => user.id, "email_address" => "luis@example.com" }
+      "user" => { "id" => user.id, "email_address" => "luis@example.com", "line_linked" => false }
     )
     expect(user.sessions.count).to eq(1)
   end

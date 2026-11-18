@@ -29,6 +29,13 @@ class Api::V1::BaseController < ActionController::API
       request_bearer_authentication unless Current.session
     end
 
+    # A new session and its bearer token, for email and LINE sign-in alike (ADR 0023).
+    def start_api_session_for(user)
+      @session = user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip)
+      @expires_at = Session::API_TOKEN_TTL.from_now
+      render "api/v1/sessions/create", status: :created, location: api_v1_me_url
+    end
+
     # RFC 6750 §3: say which scheme to use, and flag a token that was sent but didn't verify.
     def request_bearer_authentication
       challenge = %(Bearer realm="warikan")
