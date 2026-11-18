@@ -12,7 +12,7 @@ info:
     - **Amounts** are integers in yen. Shares round up, and the payer keeps the odd yen
       (ADR 0008). Every computed amount comes from the server; clients never recompute money.
     - **Times** are ISO 8601 with the offset (Japan time). **Dates** are `YYYY-MM-DD`.
-    - **Access:** every endpoint except `POST /session` needs a bearer token. An occasion's
+    - **Access:** every endpoint except `POST /session` and `POST /session/line` needs a bearer token. An occasion's
       token in the URL is what grants access to that occasion; an account doesn't restrict
       which occasions you can open (ADR 0005, 0022).
     - **Rate limits:** sign-in 10 per 3 minutes per IP; creating occasions 10 per minute;
@@ -63,6 +63,77 @@ paths:
       responses:
         "204": { description: Signed out. The token no longer works. }
         "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /session/line:
+    post:
+      operationId: signInWithLine
+      summary: Sign in with LINE, optionally linking an email account
+      description: |
+        Send the ID token from `liff.getIDToken()`. The server has LINE verify it (ADR 0024).
+        - **Without email:** signs into the account with that LINE ID, creating a LINE-only
+          account the first time.
+        - **With `email_address` and `password`:** also links that email account to this LINE
+          account. If the LINE ID had its own LINE-only account, that account is merged into the
+          email account (its claims move over) and deleted, so its tokens stop working. The token
+          returned is the email account's.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_token]
+              properties:
+                id_token: { type: string, description: From `liff.getIDToken()`. }
+                email_address: { type: string, format: email }
+                password: { type: string, description: Required with `email_address`. }
+      responses:
+        "201":
+          description: Signed in.
+          headers:
+            Location: { $ref: "#/components/headers/Location" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401":
+          description: |
+            `invalid_line_token`: LINE rejected the ID token (expired, another channel, forged).
+            `invalid_credentials`: wrong email or password when linking; nothing is linked.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "409":
+          description: |
+            `email_account_linked_elsewhere`: the email account is linked to a different LINE account.
+            `line_linked_elsewhere`: this LINE account is linked to a different email account.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503":
+          description: LINE couldn't be reached (`line_unavailable`). Email sign-in and existing tokens still work.
+          headers:
+            Retry-After: { schema: { type: integer } }
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+
+  /me/line:
+    delete:
+      operationId: unlinkLine
+      summary: Unlink LINE from your account
+      description: Only for an account that can still sign in with email and password.
+      responses:
+        "204": { description: Unlinked. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "`cannot_unlink`: the account has no email and password to fall back on."
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
 
   /me:
     get:
@@ -375,7 +446,9 @@ components:
         code:
           type: string
           enum: [bad_request, unauthorized, invalid_credentials, not_found, claimed_by_other,
-                 already_claimed_here, member_in_use, validation_failed, rate_limited]
+                 already_claimed_here, member_in_use, validation_failed, rate_limited,
+                 invalid_line_token, line_unavailable, email_account_linked_elsewhere,
+                 line_linked_elsewhere, cannot_unlink]
         errors:
           description: Only for `validation_failed`. Keyed by the API's field names.
           type: object
@@ -390,10 +463,11 @@ components:
 
     User:
       type: object
-      required: [id, email_address]
+      required: [id, email_address, line_linked]
       properties:
         id: { type: integer }
-        email_address: { type: string, format: email }
+        email_address: { type: [string, "null"], format: email, description: Null for a LINE-only account. }
+        line_linked: { type: boolean }
 
     Session:
       type: object

@@ -1,6 +1,6 @@
 # Spec: LINE Login and the LIFF app on the API (slice 2c-2)
 
-- Status: Draft (2026-11-18)
+- Status: Implemented (2026-11-18); not yet deployed
 - ADRs: 0008, 0018, 0021, 0022, 0023, 0024
 
 ## Goal

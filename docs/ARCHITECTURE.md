@@ -18,7 +18,7 @@ and the purge job. Phase 2's optional accounts (2a) and JSON API (2b) are live t
 | Phase 2a: optional accounts (ADR 0022) | live since 2026-11-13 |
 | Phase 2b: JSON API at `/api/v1` (ADR 0023) | live since 2026-11-17 |
 | Phase 2c-1: warikan v1 moved in, served at `/liff` (ADR 0024) | live since 2026-11-18 |
-| Phase 2c-2: LINE Login, linking, the LIFF app on the API | planned |
+| Phase 2c-2: LINE Login, linking, the LIFF app on the API (ADR 0024) | built; being released |
 
 ## System context
 
@@ -229,6 +229,45 @@ sequenceDiagram
 - **No push updates for API clients.** They poll the occasion with `If-None-Match`, which
   costs a 304 when nothing changed.
 
+### LINE sign-in and linking *(built)*
+
+The LIFF app at `/liff` signs in with LINE and then uses the API like any other client
+(ADR 0024). LINE issues a JWT; the server has LINE verify it, then issues its own token
+(ADR 0023's signed `Session` id).
+
+```mermaid
+sequenceDiagram
+  actor User as User in LINE
+  participant LIFF as LIFF app (/liff)
+  participant LINE as LINE Platform
+  participant API as Api::V1
+  participant DB as SQLite
+  User->>LIFF: taps 「LINEでログイン」
+  LIFF->>LIFF: liff.getIDToken()
+  LIFF->>API: POST /api/v1/session/line {id_token}
+  API->>LINE: POST /oauth2/v2.1/verify (id_token, channel ID)
+  LINE-->>API: sub (the LINE user ID), or 400
+  API->>DB: find or create the user by line_user_id; INSERT session
+  API-->>LIFF: 201 token (kept in localStorage)
+  LIFF->>API: GET /api/v1/me/occasions, GET /api/v1/occasions/:token …
+  Note over LIFF,API: Same API, same problem codes, same ETags as any client
+```
+
+- **No account until asked:** opening the calculator in LINE creates nothing; signing in does.
+- **A user signs in with LINE, an email and password, or both.** `line_user_id` is unique,
+  email and password are nullable, and a check constraint (`users_can_sign_in`) keeps every user
+  able to sign in.
+- **Linking** happens in the LIFF app: send the ID token with an email account's email and
+  password. If the LINE ID already had a LINE-only account, `User#merge_line_account!` moves its
+  claims to the email account (where both held a member in one occasion, the email account's
+  stays) and deletes it, in one transaction.
+- **Unlinking** is allowed only when the account can still sign in with email.
+- **LINE being down** stops new LINE sign-ins only (`503 line_unavailable`); existing tokens and
+  email sign-in keep working.
+- **The core didn't change** for this: the website, its controllers and `BalanceSheet` /
+  `Settlement` are untouched; the changes are the `users` migration, `User`, `LineIdToken`, two
+  API controllers and `liff/` (plus a guard in password reset for users without email).
+
 ### Two deletion routes
 
 | Route | Used by | How children go | Callbacks |
@@ -261,7 +300,7 @@ A member who paid for something or is in a split can't be deleted on their own
 - **CI:** GitHub Actions runs Brakeman, bundler-audit, the importmap audit, RuboCop, RSpec,
   and system specs in headless Chrome. `bin/ci` runs the same checks locally (ADR 0014).
 
-## Phase 2 *(in progress, ADR 0021: 2a, 2b and 2c-1 live)*
+## Phase 2 *(in progress, ADR 0021: 2a, 2b and 2c-1 live; 2c-2 built)*
 
 Three slices, each shippable on its own:
 1. **2a, accounts (ADR 0022):** the Rails 8 auth generator with login kept optional, sign-up,
@@ -274,6 +313,7 @@ Three slices, each shippable on its own:
    Login as a second sign-in on the same `User`, including linking LINE to an existing
    email account. Split in two (ADR 0024): **2c-1**, live since 2026-11-18, moved v1 into `liff/`
    and serves it at `/liff` from a Node build stage, with no change for users; **2c-2** adds LINE
-   Login, linking and the screens on the API.
+   Login, linking and the screens on the API (see
+   [LINE sign-in and linking](#line-sign-in-and-linking-built)).
 
 The core keeps running on its own (ADR 0016, 0017).
