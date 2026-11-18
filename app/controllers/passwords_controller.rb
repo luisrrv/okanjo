@@ -7,7 +7,8 @@ class PasswordsController < ApplicationController
   end
 
   def create
-    if user = User.find_by(email_address: params[:email_address])
+    # presence: without it, a missing address would find a LINE-only account (no email, ADR 0024).
+    if params[:email_address].present? && (user = User.find_by(email_address: params[:email_address]))
       PasswordsMailer.reset(user).deliver_later
     end
 

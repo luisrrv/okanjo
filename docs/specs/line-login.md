@@ -35,7 +35,8 @@ One migration:
   must pass unchanged.
 - `validates :email_address` presence and format only when there's no `line_user_id`, or when
   it's given.
-- `validates :line_user_id, uniqueness: true, allow_nil: true`.
+- No uniqueness validation on `line_user_id`: it comes from LINE, never a form, so its unique
+  index is the guard. A validation would turn `create_or_find_by!`'s race into a `RecordInvalid`.
 - `#merge_line_account!(line_user)`: in one transaction, move each of `line_user`'s claimed
   members to `self`, except in an occasion where `self` already holds a member (that one is
   released); destroy `line_user` (its sessions go with it); then set `self.line_user_id`. Claims
@@ -44,16 +45,17 @@ One migration:
 
 ## Verifying LINE's ID token (0024, D3)
 `LineIdToken.verify(id_token)` in `app/models/line_id_token.rb`, plain Ruby:
-- `Net::HTTP.post_form` to `https://api.line.me/oauth2/v2.1/verify` with `id_token` and
-  `client_id` = `Rails.configuration.x.line.channel_id`, with 3-second open and 5-second read
-  timeouts.
+- `Net::HTTP.start` (`post_form` can't set timeouts) and a form `POST` to
+  `https://api.line.me/oauth2/v2.1/verify` with `id_token` and `client_id` =
+  `Rails.configuration.x.line.channel_id`, with 3-second open and 5-second read timeouts.
 - `200`: returns the `sub` claim (the LINE user ID). LINE has checked the signature, expiry and
   audience.
 - `400`: raises `LineIdToken::Invalid`.
 - A timeout, a connection error or any other status: raises `LineIdToken::Unavailable`.
 - `LINE_CHANNEL_ID` is plain configuration (`env.clear` in `config/deploy.yml`), read in
-  `config/application.rb` into `config.x.line.channel_id`. Production refuses to boot without it.
-- Specs stub `Net::HTTP.post_form` (no WebMock: a gem would need an ADR). Request specs stub
+  `config/application.rb` into `config.x.line.channel_id`. It's checked when a LINE sign-in needs
+  it, not at boot: the Docker build precompiles assets in production mode without it.
+- Specs stub `Net::HTTP.start` (no WebMock: a gem would need an ADR). Request specs stub
   `LineIdToken.verify`.
 
 ## API changes
@@ -97,7 +99,8 @@ and `password`. Rate-limited like `POST /session` (10 per 3 minutes per IP).
 - The header and anything showing `email_address` handle `nil`. A LINE-only user can't sign in
   on the website (no web LINE Login), so this only matters if one ever has a website session; it
   can't, but the views don't assume.
-- Password reset finds users by email, so LINE-only users never match. No change.
+- Password reset finds users by email. With the address missing, `find_by(email_address: nil)`
+  would find a LINE-only account, so it now looks only when an address is given.
 - No other change to the core.
 
 ## The LIFF app (`liff/`)

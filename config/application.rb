@@ -30,6 +30,10 @@ module Okanjo
     config.i18n.available_locales = [ :ja ]
     config.time_zone = "Tokyo"
 
+    # The LINE Login channel that owns the LIFF app (ADR 0024). Checked when a LINE sign-in
+    # needs it, not at boot, so building the image doesn't need it.
+    config.x.line.channel_id = ENV["LINE_CHANNEL_ID"]
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

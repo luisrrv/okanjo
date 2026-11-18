@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_082442) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_045606) do
   create_table "expenses", force: :cascade do |t|
     t.integer "group_id", null: false
     t.integer "payer_id", null: false
@@ -59,11 +59,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_082442) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "email_address", null: false
-    t.string "password_digest", null: false
+    t.string "email_address"
+    t.string "password_digest"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "line_user_id"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["line_user_id"], name: "index_users_on_line_user_id", unique: true
+    t.check_constraint "line_user_id IS NOT NULL OR (email_address IS NOT NULL AND password_digest IS NOT NULL)", name: "users_can_sign_in"
   end
 
   add_foreign_key "expenses", "groups", on_delete: :cascade
