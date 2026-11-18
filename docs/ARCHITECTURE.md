@@ -20,6 +20,7 @@ front end with LINE Login (2c). Everything marked *planned* is designed but not 
 | Phase 2b: JSON API at `/api/v1` (ADR 0023) | live since 2026-11-17 |
 | Phase 2c-1: warikan v1 moved in, served at `/liff` (ADR 0024) | live since 2026-11-18 |
 | Phase 2c-2: LINE Login, linking, the LIFF app on the API (ADR 0024) | live since 2026-11-18 |
+| Phase 3: security and limits | planned |
 
 ## System context
 
@@ -318,3 +319,19 @@ Three slices, each shippable on its own:
    [LINE sign-in and linking](#line-sign-in-and-linking-live)).
 
 The core keeps running on its own (ADR 0016, 0017).
+
+## Phase 3: security and limits *(planned)*
+
+Recorded 2026-11-18; designed and decided in its own ADR before any work starts.
+- **A per-address limit on password-reset emails.** Email Delivery is the one cost an attacker
+  can push up: the per-IP `rate_limit` doesn't stop many IPs. Litestream's requests are bounded
+  by its sync interval, not traffic, and compute is a fixed Always Free instance.
+- **A Content Security Policy.** `config/initializers/content_security_policy.rb` is still
+  commented out; the LIFF page needs its own policy for LINE's SDK.
+- **A privacy policy page,** so the LINE Login channel can be published (it's still in
+  development, so only admins and testers can sign in with LINE).
+- **Purging expired sessions** (deferred in ADR 0023): every LINE sign-in adds a `Session` row.
+- **Later in the phase:** account deletion (deferred in ADR 0022) and a `secret_key_base`
+  rotation runbook (it signs API tokens too, ADR 0023).
+- **Outside the code:** the Oracle budget alerts (¥10 forecast and actual, ¥100 actual). Budgets
+  only alert; nothing caps a pay-as-you-go account automatically.

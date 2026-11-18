@@ -18,7 +18,8 @@ This repo is also a record of how it was built: Luis owns the architecture and d
 
 ## Roadmap
 1. **Core:** groups, members, expenses, settlement, a printable receipt, one Solid Queue job (the 30-day purge). No login (ADR 0016). CI, deployed with Kamal.
-2. **Showcase (after core ships, needs an ADR first):** starts with the Rails 8 auth generator, then a JSON API consumed by a small LIFF front end, with LINE Login as a second auth strategy on the same `User` (via a nullable `Member.user_id`). The core stays a Hotwire monolith that runs standalone, and the LINE pieces are optional.
+2. **Showcase (after core ships, needs an ADR first):** starts with the Rails 8 auth generator, then a JSON API consumed by a small LIFF front end, with LINE Login as a second auth strategy on the same `User` (via a nullable `Member.user_id`). The core stays a Hotwire monolith that runs standalone, and the LINE pieces are optional. Live since 2026-11-18 (ADR 0021–0024).
+3. **Security and limits (planned, needs an ADR first):** a per-address limit on password-reset emails (the one cost an attacker can push up), a Content Security Policy (including the LIFF page), a privacy policy page so the LINE channel can be published, and purging expired sessions. Later in the phase: account deletion and a `secret_key_base` rotation runbook. Budget alerts are Luis's console settings.
 
 Keep phase 2 in mind when designing phase 1, and raise it whenever a phase 1 choice would make it harder.
 
