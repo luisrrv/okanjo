@@ -33,3 +33,9 @@ styling.
   Stimulus controller that confirms leaving the payer out of the split (0015).
 - Phase 2 adds a JSON API next to the HTML app, for the LIFF client. The core keeps running
   on its own as a monolith.
+
+## Update (2026-11-18): a Node build for the LIFF client
+Slice 2c (0024) moves warikan v1's TypeScript client into `liff/`. The repo now builds Node in a
+Docker build stage and a CI job, for that client only. The Rails app and the final image stay
+Node-free, and the website is still server-rendered HTML with Turbo and Stimulus.
+
