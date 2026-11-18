@@ -1,6 +1,6 @@
 # Spec: LINE Login and the LIFF app on the API (slice 2c-2)
 
-- Status: Implemented (2026-11-18); not yet deployed
+- Status: Implemented (2026-11-18); live at https://warikan.lrod.dev/liff
 - ADRs: 0008, 0018, 0021, 0022, 0023, 0024
 
 ## Goal
@@ -208,3 +208,20 @@ Japanese, with English glosses; a native speaker should check them.
    LINE name; add an expense and a member; share the card and open it from the chat; on the
    website, signed in with email, link LINE from LIFF and see the LIFF-created occasion under
    自分の割り勘; unlink is refused for a LINE-only account and allowed for the email account.
+
+## Verified in production (2026-11-18)
+Deployed as `4072e58` with `LINE_CHANNEL_ID` set. Before the LINE test: the `users` migration had
+run (`line_user_id`, the `users_can_sign_in` check), the server read the channel ID, and a fake ID
+token at `POST /api/v1/session/line` got `401 invalid_line_token` from LINE's verify endpoint (so
+the path to LINE works); `/liff` served the new 22 KB client.
+
+Luis then ran the checklist in LINE on his phone, all passing: the calculator with ¥1 rounding
+(¥4,501 ÷ 3 → ¥1,501, ¥2 odd yen); LINE sign-in creating a LINE-only account; a new occasion with
+his LINE name; adding a member and an expense; sharing the occasion card and opening it from the
+chat; linking his email account; the LINE-created occasion under 自分の割り勘 on the website; and
+the link button gone afterwards.
+
+The logs for that window show three LINE sign-ins (the fake-token check, the sign-in, the link),
+every response `200`, `201`, `304` or that one `401`, and no `5xx` or exceptions. Production has
+one user, with both LINE and email: the LINE-only account was merged into the email account and
+deleted, as designed.
