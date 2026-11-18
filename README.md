@@ -10,8 +10,9 @@ share the link, add who paid for what, and the app tells everyone who pays whom.
 
 ## Why it exists
 I first built [warikan v1](https://github.com/luisrrv/warikan), a stateless LINE (LIFF)
-calculator. It's still live, so you can try both: [open v1 in LINE](https://liff.line.me/2009905533-DGtLYpEl)
-or use its [web preview](https://warikan-jp.netlify.app).
+calculator. It's still live: [open it in LINE](https://liff.line.me/2009905533-DGtLYpEl) or on the
+[web](https://warikan.lrod.dev/liff). Its code now lives in this repo as `liff/`, with its history,
+and this app serves it.
 This repo is warikan v2: the same problem rebuilt as a Rails 8 Hotwire monolith with real
 persistence. It's
 the same domain in two stacks, and it shows how I design a system and ship it with AI: I
@@ -24,8 +25,10 @@ trail is in this repo.
 - **Phase 2, slice 2a (live):** optional accounts.
 - **Phase 2, slice 2b (live):** a versioned JSON API (`/api/v1`) designed as if its client
   were external. See [Try the API](#try-the-api).
-- **Next:** 2c, which moves warikan v1 into this repo as the LINE front end on that API, with
-  LINE Login. After 2c there is one warikan. See [ADR 0021](docs/adr/0021-phase-2-shape.md).
+- **Phase 2, slice 2c-1 (live):** warikan v1 moved into `liff/` and is served at `/liff`.
+- **Next:** 2c-2, which turns it into the LINE front end on the API, with LINE Login. After 2c
+  there is one warikan. See [ADR 0021](docs/adr/0021-phase-2-shape.md) and
+  [ADR 0024](docs/adr/0024-line-front-end-and-line-login.md).
 
 ## What it does
 - **Occasions, not groups.** Every calculation is a new occasion, reached by an unguessable
@@ -63,6 +66,7 @@ considered and their trade-offs. The system is summarised in
 | [0021](docs/adr/0021-phase-2-shape.md) | Phase 2 in three slices: accounts, an external-grade API, then v1 as the LINE front end |
 | [0022](docs/adr/0022-optional-accounts-with-the-auth-generator.md) | Optional accounts with the Rails 8 auth generator |
 | [0023](docs/adr/0023-api-v1-for-slice-2b.md) | The API: a signed session id as the bearer token (and why not JWT), one aggregate read, problem details |
+| [0024](docs/adr/0024-line-front-end-and-line-login.md) | v1 becomes the LINE front end: LINE's verify endpoint, account linking and merging, Node only in a build stage |
 
 The feature specs written before each session are in [`docs/specs/`](docs/specs/).
 
