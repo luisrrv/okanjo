@@ -63,30 +63,87 @@ body {
   font-weight: 600;
 }
 
-.lang-toggle {
+.nav {
   display: inline-flex;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 2px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
-.lang-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
+.nav-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 12px;
   font-weight: 500;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
-  letter-spacing: 0.02em;
 }
 
-.lang-btn[aria-pressed="true"] {
-  background: var(--bg);
+.nav-btn:disabled {
+  opacity: 0.5;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.view[hidden],
+.message[hidden],
+.muted[hidden] {
+  display: none;
+}
+
+.view-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.message {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  /* Readable in light and dark: a tint of the same red. */
+  background: color-mix(in srgb, #d92d20 12%, transparent);
+  color: #d92d20;
+  font-size: 13px;
+  line-break: strict;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.occasion-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.occasion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
   color: var(--text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+}
+
+.occasion-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .field {

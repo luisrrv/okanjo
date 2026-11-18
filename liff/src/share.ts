@@ -3,16 +3,13 @@
  *
  * The FlexMessage is what the *recipient* sees in their LINE chat — a clean,
  * card-shaped summary with the per-person amount as the headline. Recipients
- * who tap the card open Warikan with the same numbers prefilled.
- *
- * Language for the share message follows the SENDER's choice (tIn(getLang(), ...)),
- * not the recipient's. Translating per-recipient would mean knowing each one's
- * preference at send time — LIFF doesn't expose that, and the trade isn't worth
- * the complexity.
+ * who tap the card open Warikan with the same numbers prefilled (main.ts reads them).
+ * Japanese only (ADR 0024, D7).
  */
 
 import type { SplitResult } from './calc';
-import { getLang, tIn, type Lang } from './i18n';
+import { t } from './i18n';
+import { formatYen } from './format';
 
 type LiffLike = {
   shareTargetPicker(messages: unknown[]): Promise<{ status: 'success' } | unknown>;
@@ -43,16 +40,13 @@ function buildDeepLink(result: SplitResult): string {
   return `${base}/?${params.toString()}`;
 }
 
-function formatYen(n: number): string {
-  return `¥${n.toLocaleString('en-US')}`;
-}
 
 /**
  * Build the FlexMessage payload. Shape is documented at:
  * https://developers.line.biz/en/reference/messaging-api/#flex-message
  */
-export function buildShareMessage(result: SplitResult, lang: Lang) {
-  const altText = `${tIn(lang, 'shareCardHeader')}: ${formatYen(result.perPerson)} × ${result.people}`;
+export function buildShareMessage(result: SplitResult) {
+  const altText = `${t('shareCardHeader')}: ${formatYen(result.perPerson)} × ${result.people}`;
   const link = buildDeepLink(result);
 
   return {
@@ -69,7 +63,7 @@ export function buildShareMessage(result: SplitResult, lang: Lang) {
         contents: [
           {
             type: 'text',
-            text: tIn(lang, 'shareCardHeader'),
+            text: t('shareCardHeader'),
             color: '#FFFFFF',
             weight: 'bold',
             size: 'sm',
@@ -88,7 +82,7 @@ export function buildShareMessage(result: SplitResult, lang: Lang) {
             contents: [
               {
                 type: 'text',
-                text: tIn(lang, 'perPersonLabel'),
+                text: t('perPersonLabel'),
                 size: 'sm',
                 color: '#888888',
                 flex: 0,
@@ -113,7 +107,7 @@ export function buildShareMessage(result: SplitResult, lang: Lang) {
             contents: [
               {
                 type: 'text',
-                text: tIn(lang, 'totalLabel'),
+                text: t('totalLabel'),
                 size: 'xs',
                 color: '#888888',
               },
@@ -132,13 +126,13 @@ export function buildShareMessage(result: SplitResult, lang: Lang) {
             contents: [
               {
                 type: 'text',
-                text: tIn(lang, 'peopleLabel'),
+                text: t('peopleLabel'),
                 size: 'xs',
                 color: '#888888',
               },
               {
                 type: 'text',
-                text: `${result.people}${tIn(lang, 'people') === '人' ? '人' : ` ${tIn(lang, 'people')}`}`,
+                text: `${result.people}${t('people')}`,
                 size: 'xs',
                 color: '#1A1A1A',
                 align: 'end',
@@ -158,7 +152,7 @@ export function buildShareMessage(result: SplitResult, lang: Lang) {
             height: 'sm',
             action: {
               type: 'uri',
-              label: tIn(lang, 'shareCardOpen'),
+              label: t('shareCardOpen'),
               uri: link,
             },
           },
@@ -174,14 +168,11 @@ export function buildShareMessage(result: SplitResult, lang: Lang) {
  */
 export async function shareResult(liff: LiffLike, result: SplitResult): Promise<boolean> {
   if (!liff.isInClient()) {
-    alert(getLang() === 'ja'
-      ? 'この機能はLINEアプリ内でのみ利用できます'
-      : 'Sharing only works inside the LINE app.');
+    alert(t('shareOnlyInLine'));
     return false;
   }
 
-  const lang = getLang();
-  const message = buildShareMessage(result, lang);
+  const message = buildShareMessage(result);
 
   try {
     await liff.shareTargetPicker([message]);
