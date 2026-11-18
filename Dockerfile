@@ -27,6 +27,18 @@ ENV RAILS_ENV="production" \
     BUNDLE_WITHOUT="development" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
+# Build the LIFF app (ADR 0024). Node exists only in this stage; the final image gets the
+# built files.
+FROM docker.io/library/node:24-slim AS liff
+WORKDIR /liff
+# Public: the LIFF ID is in every share link (liff.line.me/<LIFF ID>).
+ENV VITE_LIFF_ID="2009905533-DGtLYpEl"
+RUN corepack enable
+COPY liff/package.json liff/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY liff/ ./
+RUN pnpm build
+
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
@@ -46,6 +58,11 @@ RUN bundle install && \
 
 # Copy application code
 COPY . .
+
+# The built LIFF app: hashed assets in public/liff, the page where LiffController renders it.
+# The client's source isn't needed at runtime.
+COPY --from=liff /liff/dist ./public/liff
+RUN mkdir -p app/views/liff && mv public/liff/index.html app/views/liff/show.html && rm -rf liff
 
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495

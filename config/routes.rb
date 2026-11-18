@@ -14,6 +14,9 @@ Rails.application.routes.draw do
     resource :receipt, only: :show
   end
 
+  # The LINE front end (ADR 0024): the built LIFF app's page; its assets are in public/liff.
+  get "liff", to: "liff#show"
+
   # The JSON API (ADR 0023): bearer tokens, its own controllers, the product's words.
   namespace :api, defaults: { format: :json } do
     namespace :v1 do

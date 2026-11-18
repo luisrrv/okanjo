@@ -49,3 +49,9 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# The LIFF app builds in its own Docker stage from source.
+/liff/node_modules/
+/liff/dist/
+/public/liff/
+/app/views/liff/show.html

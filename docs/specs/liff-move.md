@@ -17,15 +17,16 @@ deploy.
 
 ## Import
 - `git subtree add --prefix=liff <path to the v1 repo> main`: one merge commit that brings in
-  v1's 13 commits, so `git log -- liff/` shows its history.
+  v1's 13 commits as its second parent. They keep their original paths (no `liff/` prefix), so
+  `git log -- liff/` shows only the import; `git log <import commit>^2` shows v1's history.
 - v1's `.env` is gitignored and stays behind. Nothing secret moves.
 
 ## Build
 - **`liff/vite.config.ts`** (new): `base: '/liff/'`, so the built `index.html` references
   `/liff/assets/...`. v1 has no Vite config today; this is the only change to its code.
-- **`liff/.env.production`** (new, committed): `VITE_LIFF_ID=<LIFF ID>`. The LIFF ID is public
-  (it's in every share link), and v1's `main.ts` refuses to build without it. Luis gives the
-  value.
+- **The LIFF ID** (`VITE_LIFF_ID`) is set with `ENV` in the Dockerfile's `liff` stage, the only
+  place a production build happens. It's public (it's in every share link). A local hook blocks
+  writing `.env` files, so it isn't in `liff/.env.production`.
 - **`liff/package.json`:** add `"packageManager": "pnpm@<version>"`, so Corepack uses the same
   pnpm in Docker, CI and locally. The lockfile is format 9.0, which needs pnpm 9 or newer; the
   pnpm on Luis's Mac is 8.15.
@@ -90,15 +91,15 @@ and expect `200`. If one gets `406`, the fix is decided before deploying.
 ## Edge cases
 - **v1's share links** (`liff.line.me/<LIFF ID>?total=…&people=…`) open the new endpoint with
   the same query string, so the calculator is prefilled as before.
-- **The LIFF ID is missing at build time:** v1's `main.ts` throws, the build fails, and CI is red.
+- **The LIFF ID is missing at build time:** the build still succeeds (v1's check in `main.ts` runs
+  in the browser), and the page would fail on launch. The Dockerfile always sets it.
 - **A deploy while someone has the LIFF app open:** their page keeps its old assets (still on
   disk until Kamal's asset bridging drops them); the next launch loads the new `index.html`.
 - **The `liff` build fails:** CI is red and the PR can't merge, so a broken client never reaches
   a deploy.
 
 ## Steps
-1. **Import and build:** `git subtree add`, the Vite config, `.env.production`,
-   `packageManager`, and a local `pnpm build` in `liff/` that produces `dist/` with `/liff/`
+1. **Import and build:** `git subtree add`, the Vite config, the LIFF ID, `packageManager`, and a local `pnpm build` in `liff/` that produces `dist/` with `/liff/`
    paths.
 2. **Serve:** `LiffController`, the route, the ignores, the Docker stage; request specs for
    `/liff` and the in-app browser check.

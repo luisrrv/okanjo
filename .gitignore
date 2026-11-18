@@ -36,3 +36,7 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# The LIFF app's build output (ADR 0024): built in Docker, never committed.
+/public/liff/
+/app/views/liff/show.html
