@@ -135,8 +135,9 @@ The design came first, then one feature at a time, each following the same workf
 3. **Spec:** written before any code.
 4. **Implementation:** small, reviewable commits, each with tests.
 
-The project's [`CLAUDE.md`](CLAUDE.md) holds the working agreement. A few commits are worth
-reading as a pair:
+[`docs/WORKING_AGREEMENT.md`](docs/WORKING_AGREEMENT.md) holds the working agreement. Claude's
+own configuration files are kept local and aren't committed. A few commits are worth reading as
+a pair:
 - `f62f874` and `062f440`: a deliberately naive balance sheet with an N+1 (37 queries on the
   sample data, 197 in a larger spec), then the fix (3 queries) and a spec that keeps it fixed.
 - `d1d81d8`: a real incompatibility between `activesupport` 8.1.3.1 and `json` 3.0, found
