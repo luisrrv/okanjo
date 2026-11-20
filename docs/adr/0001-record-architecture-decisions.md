@@ -32,3 +32,10 @@ rule that Luis writes all the code by hand.
   0008 and 0013 onwards were written first, as decisions were reopened or made. 0010 and
   0011 were never written, because 0016 replaced them first.
 - An ADR overrides the original plan where they differ.
+
+## Update (2026-11-20): Claude config files are no longer committed
+`CLAUDE.md` and the files under `.claude/` (settings, the Stop hook, the `/adr` skill) are no
+longer tracked; Luis keeps Claude configuration local in all his repos. The working agreement
+`CLAUDE.md` held now lives in [`docs/WORKING_AGREEMENT.md`](../WORKING_AGREEMENT.md). The ADRs,
+specs and the rest of `docs/` stay committed, so the workflow is still public. Earlier commits
+still contain `CLAUDE.md`; history isn't rewritten.
