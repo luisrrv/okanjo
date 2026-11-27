@@ -7,15 +7,15 @@ the rest.
 _Last updated: 2026-11-27._
 
 ## Current state
-- **Branch:** `claude/ops-budget-netlify` (from `main` at `a3daf92`), docs only, waiting for
-  Luis's review: it records the budget alerts and the retired Netlify site.
+- **Branch:** `claude/handoff-ruby-upgrade` (from `main` at `1cef9e5`), docs only, waiting for
+  Luis's review: it records the Ruby upgrade, the gem updates and the Capybara workaround.
 - **Claude config is local only.** `CLAUDE.md`, `CLAUDE.local.md` and `.claude/` are ignored by
   the global `~/.config/git/ignore` on Luis's Mac. A fresh clone has none of them;
   `CLAUDE.local.md` imports the public agreement with `@docs/WORKING_AGREEMENT.md`.
 - **Live at https://warikan.lrod.dev:** the core (phase 1) and all of phase 2 (ADR 0021): optional
   accounts (2a), the JSON API at `/api/v1` (2b), and the LINE front end at `/liff` with LINE Login
-  and account linking (2c). Production runs `4072e58`; later merges (`bcb44ee`, `53f2a3a`) are
-  docs only and don't need a deploy.
+  and account linking (2c). Production runs `1cef9e5` (deployed 2026-11-27): Ruby 3.4.13,
+  puma 8.1.3.
 - **Verified in production:** each slice's spec has a "Verified in production" section
   (`docs/specs/accounts.md`, `api.md`, `liff-move.md`, `line-login.md`).
 - **warikan v1** (`luisrrv/warikan`) is archived with a pointer here; its code lives in `liff/`
@@ -38,7 +38,8 @@ _Last updated: 2026-11-27._
    this repo.
 4. **Smaller follow-ups:** a per-occasion rounding unit (¥1/¥10/¥100, ADR 0024 D1); a test runner
    for `liff/`; a native-speaker review of the Japanese in `config/locales/ja.yml` `api.errors` and
-   `liff/src/i18n.ts`.
+   `liff/src/i18n.ts`; the open Dependabot PRs (`bootsnap`, `thruster`, `selenium-webdriver`,
+   `actions/setup-node`).
 
 ## Decisions not recorded in an ADR
 Most decisions are ADRs (`docs/adr/README.md`). These smaller ones were made while building:
@@ -68,6 +69,12 @@ Most decisions are ADRs (`docs/adr/README.md`). These smaller ones were made whi
   `.claude/settings.json`, `.claude/hooks/verify.sh` and the `/adr` skill are untracked (kept
   locally; old commits still have them). The agreement is now `docs/WORKING_AGREEMENT.md`
   (ADR 0001 update). `docs/HANDOFF.md` is now committed.
+- **2026-11-27** Ruby 3.4.10 → 3.4.13 for CVE-2026-132825 (a heap overflow in string case
+  conversion, fixed 2026-11-18), found when Brakeman 8.1.1 flagged it. puma 8.1.1 → 8.1.3 and
+  net-ssh 7.3.8 → 7.3.10 for `bundler-audit` advisories. Deployed the same day.
+- **2026-11-27** Chrome 158 broke Capybara's `reset!` in CI and locally. Worked around in
+  `spec/support/` rather than pinning Chrome in CI, so local runs pass too. `selenium-webdriver`
+  4.54 didn't help.
 
 ## Gotchas
 - **Remote and GitHub CLI:** the remote is `origin2`, not `origin`. `git push` works over SSH as
@@ -95,15 +102,18 @@ Most decisions are ADRs (`docs/adr/README.md`). These smaller ones were made whi
   `liff/src/liff-mock.ts`. Run Rails on 3000 and `pnpm dev` in `liff/` (it proxies `/api`).
 - **pnpm:** `liff/` pins pnpm 10 via `packageManager`; run `corepack enable` once (the global pnpm
   on Luis's Mac is 8.15 and can't read the lockfile).
-- **System specs fail locally** (5 in `spec/system/`, `Selenium::WebDriver::Error::InvalidArgumentError`
-  with Chrome 158 and `selenium-webdriver` 4.52); they pass in CI. Until it's fixed, a local Claude
-  Code Stop hook (not in the repo; it runs the whole suite) blocks once whenever Ruby files
-  changed. Run
-  `bundle exec rspec --exclude-pattern "spec/system/**/*_spec.rb"` to check the rest.
+- **`spec/support/capybara_chrome_158.rb` is temporary.** Chrome 158 rejects the `*` origin that
+  Capybara 3.40.0 sends from `reset!`, so every system spec failed in teardown. Delete the file
+  once a Capybara release fixes it
+  ([teamcapybara/capybara#2865](https://github.com/teamcapybara/capybara/issues/2865)).
+- **`bin/brakeman` runs with `--ensure-latest`** (kept on purpose): CI's `scan_ruby` fails as
+  soon as a new Brakeman is released, until `Gemfile.lock` is updated. The same job runs
+  `bundler-audit`, which fails on any new gem advisory.
+- **The 2026-11-27 deploy took 78 minutes** (normally a few). Likely the first build on a new
+  Ruby base image (no cache, every native gem recompiled, all layers pushed), but the build log
+  wasn't kept. Keep the full log next time: `bin/kamal deploy 2>&1 | tee tmp/deploy.log`.
 
 ## Open questions
-- **Local system specs:** fix the Chrome/chromedriver mismatch, or make the local Claude Code
-  Stop hook (not in the repo) skip `spec/system/` like CI's `test` job does?
 - **The Oracle charge's SKU** (Cost Analysis, grouped by service and SKU) is unconfirmed.
 - **Native-speaker review** of the new Japanese copy (see next step 4).
 - **The privacy policy's wording** for publishing the LINE channel is Luis's.
