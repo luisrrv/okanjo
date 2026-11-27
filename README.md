@@ -83,7 +83,7 @@ The only gems beyond the defaults are `rspec-rails`, `factory_bot_rails` and `ra
 each with an ADR.
 
 ## Run it locally
-Needs Ruby 3.4.10 (see `.ruby-version`) and Chrome for the system specs.
+Needs Ruby 3.4.13 (see `.ruby-version`) and Chrome for the system specs.
 
 ```bash
 bin/setup        # installs gems, creates and seeds the database (a sample 飲み会)
