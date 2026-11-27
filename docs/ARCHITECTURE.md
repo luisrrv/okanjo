@@ -333,5 +333,6 @@ Recorded 2026-11-18; designed and decided in its own ADR before any work starts.
 - **Purging expired sessions** (deferred in ADR 0023): every LINE sign-in adds a `Session` row.
 - **Later in the phase:** account deletion (deferred in ADR 0022) and a `secret_key_base`
   rotation runbook (it signs API tokens too, ADR 0023).
-- **Outside the code:** the Oracle budget alerts (¥10 forecast and actual, ¥100 actual). Budgets
-  only alert; nothing caps a pay-as-you-go account automatically.
+- **Outside the code:** the Oracle budget alerts, set on 2026-11-27 (budget ¥20; alerts at
+  forecast ¥20, actual ¥20 and actual ¥200). Budgets only alert; nothing caps a pay-as-you-go
+  account automatically.

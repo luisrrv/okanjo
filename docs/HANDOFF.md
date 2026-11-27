@@ -4,12 +4,11 @@ The state of the work for whoever picks it up next: a new Claude Code session (t
 cloud) or Luis. Read this first. It only holds what the other docs don't; it links to them for
 the rest.
 
-_Last updated: 2026-11-20._
+_Last updated: 2026-11-27._
 
 ## Current state
-- **Branch:** `claude/untrack-claude-files` (from `main` at `53f2a3a`), waiting for Luis's
-  review: it untracks the Claude config files, moves the working agreement to
-  [`docs/WORKING_AGREEMENT.md`](WORKING_AGREEMENT.md), and starts tracking this file.
+- **Branch:** `claude/ops-budget-netlify` (from `main` at `a3daf92`), docs only, waiting for
+  Luis's review: it records the budget alerts and the retired Netlify site.
 - **Claude config is local only.** `CLAUDE.md`, `CLAUDE.local.md` and `.claude/` are ignored by
   the global `~/.config/git/ignore` on Luis's Mac. A fresh clone has none of them;
   `CLAUDE.local.md` imports the public agreement with `@docs/WORKING_AGREEMENT.md`.
@@ -26,22 +25,18 @@ _Last updated: 2026-11-20._
   can sign in with LINE.
 
 ## Next steps (in priority order)
-1. **Luis: Oracle budget alerts.** On budget `okanjo-no-charges`: amount ¥10; alert rules
-   Forecast ≥ 100%, Actual ≥ 100%, Actual ≥ 1000% (¥100); remove the ¥1 rule. Budgets only alert;
-   nothing caps a pay-as-you-go account.
-2. **Luis: retire the Netlify site** (`warikan-jp.netlify.app`). Nothing links to it any more.
-3. **Phase 3, security and limits:** a design round (options and tradeoffs per item), Luis's
+1. **Phase 3, security and limits:** a design round (options and tradeoffs per item), Luis's
    decisions, then ADR 0025 and specs. Candidates and reasoning: `docs/ARCHITECTURE.md`,
    "Phase 3". Start with the per-address limit on password resets, the CSP, the privacy policy
    page (then publish the LINE channel) and the session purge.
-4. **The write-up ADR 0021 promised:** `docs/` "Adding LINE to an existing Rails app" (LINE
+2. **The write-up ADR 0021 promised:** `docs/` "Adding LINE to an existing Rails app" (LINE
    channel setup, verifying the ID token on the server, account linking, the in-app browser,
    what the core didn't need).
-5. **Interview practice:** a round on 2c (e.g. why `create_or_find_by!` conflicts with a
+3. **Interview practice:** a round on 2c (e.g. why `create_or_find_by!` conflicts with a
    uniqueness validation; why LINE's verify endpoint instead of decoding the JWT; how the merge
    stays safe). The questions and answers so far are kept in Luis's private notes, outside
    this repo.
-6. **Smaller follow-ups:** a per-occasion rounding unit (¥1/¥10/¥100, ADR 0024 D1); a test runner
+4. **Smaller follow-ups:** a per-occasion rounding unit (¥1/¥10/¥100, ADR 0024 D1); a test runner
    for `liff/`; a native-speaker review of the Japanese in `config/locales/ja.yml` `api.errors` and
    `liff/src/i18n.ts`.
 
@@ -63,6 +58,11 @@ Most decisions are ADRs (`docs/adr/README.md`). These smaller ones were made whi
   「LINEでログイン」 does.
 - **2026-11-18** Oracle charges of about ¥2 a month are acceptable (likely Litestream's Object
   Storage requests; unconfirmed). Keep the 1-minute sync; raise the alert instead.
+- **2026-11-27** Real Oracle spend is about ¥7–8 a month (¥7.38 spent, ¥8.10 forecast on
+  2026-11-27), not ¥2. Budget `okanjo-no-charges` raised from ¥1 to ¥20, with alerts at
+  Forecast 100% (¥20), Actual 100% (¥20) and Actual 1000% (¥200); the ¥1 rule is gone.
+- **2026-11-27** The Netlify project `warikan-jp` is disabled, not deleted, so nobody else can
+  claim `warikan-jp.netlify.app`. The 2c rollback to Netlify is gone (ADR 0024 update).
 
 - **2026-11-20** Claude config files are never committed, okanjo included. `CLAUDE.md`,
   `.claude/settings.json`, `.claude/hooks/verify.sh` and the `/adr` skill are untracked (kept
@@ -105,7 +105,7 @@ Most decisions are ADRs (`docs/adr/README.md`). These smaller ones were made whi
 - **Local system specs:** fix the Chrome/chromedriver mismatch, or make the local Claude Code
   Stop hook (not in the repo) skip `spec/system/` like CI's `test` job does?
 - **The Oracle charge's SKU** (Cost Analysis, grouped by service and SKU) is unconfirmed.
-- **Native-speaker review** of the new Japanese copy (see next step 6).
+- **Native-speaker review** of the new Japanese copy (see next step 4).
 - **The privacy policy's wording** for publishing the LINE channel is Luis's.
 - **The desktop app's worktree** `.claude/worktrees/eloquent-mendel-a87f71` (detached at `main`,
   clean) can be removed: `git worktree remove .claude/worktrees/eloquent-mendel-a87f71`.

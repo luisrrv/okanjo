@@ -116,3 +116,9 @@ Japanese.
   back to Netlify is the rollback until the old site is retired.
 - **The website's `allow_browser versions: :modern` must not block LINE's in-app browser.** 2c-1
   checks this with LINE's user-agent strings before the endpoint switch.
+
+## Update (2026-11-27): the Netlify site is retired
+The old Netlify project (`warikan-jp.netlify.app`) is disabled, after 2c-2 was verified in
+production and the LIFF endpoint was confirmed at `https://warikan.lrod.dev/liff`. Switching the
+endpoint back to Netlify is no longer a rollback. The project is disabled rather than deleted so
+the `warikan-jp.netlify.app` name stays reserved and can't be claimed by someone else.
